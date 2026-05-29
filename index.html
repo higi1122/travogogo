@@ -18,7 +18,7 @@
         extend: {
           fontFamily: {
             heading: ['Outfit', 'sans-serif'],
-            body: ['Inter', 'sans-serif'] // Changed to Inter for better readability
+            body: ['Inter', 'sans-serif']
           }
         }
       }
@@ -27,15 +27,9 @@
   
   <style>
     html, body { height: 100%; margin: 0; box-sizing: border-box; }
-    
-    /* Timeline Styles */
     .timeline-line { position: absolute; left: 1.25rem; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #22c55e, #16a34a); }
     .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: #22c55e; border: 2px solid #fff; box-shadow: 0 0 0 3px #dcfce7; position: absolute; left: calc(1.25rem - 5px); top: 1.5rem; }
-    
-    /* Utility Classes */
     .check-item input:checked + span { text-decoration: line-through; opacity: 0.5; }
-    
-    /* Animations */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .fade-up { animation: fadeUp 0.6s ease forwards; opacity: 0; }
     .fade-up:nth-child(1) { animation-delay: 0.1s; }
@@ -220,15 +214,13 @@
     
     lucide.createIcons();
 
-    // Utility: XSS Escaping Helper
     function escapeHTML(str) {
       if (!str) return '';
       return str.toString().replace(/[&<>'"]/g, tag => ({
-        '&': '&', '<': '<', '>': '>', "'": '&#39;', '"': '&quot;'
+        '&': '&', '<': '<', '>': '>', "'": ''', '"': '"'
       }[tag]));
     }
 
-    // Utility: Toast Notifications
     function showToast(message, type = 'success') {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
@@ -241,10 +233,7 @@
       container.appendChild(toast);
       lucide.createIcons();
 
-      // Animate in
       setTimeout(() => toast.classList.remove('translate-y-10', 'opacity-0'), 10);
-      
-      // Animate out and remove
       setTimeout(() => {
         toast.classList.add('opacity-0');
         setTimeout(() => toast.remove(), 300);
@@ -264,21 +253,15 @@
       }
     };
 
-    // --- 替換為連接 Google Sheet 嘅自訂 SDK ---
-    
-    // ⚠️ 請將下面呢條 URL 換成你喺 Apps Script 部署後得到嘅「Web App URL」
+    // ⚠️ 記得喺呢度換返你嘅 Google Apps Script 網址
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyVFriu7BI1HD2c3ZkOooO2DRSCiDU8E7y3GlWqHTTFFnS7evvogSx-wwSO5SsrtDdozA/exec";
 
     const customDataSdk = {
-      // 1. 讀取資料 (GET)
       async init(handler) {
         try {
           showToast('正在同步 Google Sheet 資料...', 'success');
-          
           const response = await fetch(GAS_API_URL);
           const data = await response.json();
-          
-          // 將 Google Sheet 拎到嘅資料交畀 App 更新畫面
           handler.onDataChanged(data);
           showToast('資料同步成功！', 'success');
           return { isOk: true };
@@ -289,7 +272,6 @@
         }
       },
       
-      // 2. 更新資料 (POST)
       async update(tripData) {
         try {
           showToast('正在儲存至 Google Sheet...', 'success');
@@ -297,7 +279,6 @@
             method: 'POST',
             body: JSON.stringify(tripData)
           });
-          
           const result = await response.json();
           if (result.status === 'success') {
             return { isOk: true };
@@ -313,22 +294,18 @@
         }
       },
 
-      // 3. 建立新 Trip (POST - Apps Script 會幫你開新 Tab)
       async create(tripData) {
         return this.update(tripData); 
       }
     };
 
-    // 初始化我哋嘅 Custom SDK
     (async () => {
-      // 攔截並覆寫系統原本嘅 SDK
       window.dataSdk = customDataSdk; 
       const initResult = await window.dataSdk.init(dataHandler);
       if (!initResult.isOk) {
         console.error('無法連接到 Google Sheets 後台');
       }
     })();
-    // --- 替換完畢 ---
 
     function updateTripSelector() {
       const selector = document.getElementById('trip-selector');
@@ -356,22 +333,14 @@
       document.getElementById('trip-detail-view').classList.remove('hidden');
       document.getElementById('empty-state').classList.add('hidden');
 
-      // Update hero (escaped for safety)
       document.getElementById('trip-hero-title').textContent = trip.title;
       document.getElementById('trip-hero-dates').textContent = `${formatDate(trip.start_date)} – ${formatDate(trip.end_date)}`;
       document.getElementById('trip-overview-summary').textContent = trip.summary;
-
-      // Update selector
       document.getElementById('trip-selector').value = tripId;
 
-      // Load itineraries
       const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
       renderItineraries(itineraries);
-
-      // Load notes
       document.getElementById('notes-textarea').value = trip.notes || '';
-
-      // Load packing
       const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
       renderPackingList(packingItems);
     }
@@ -385,7 +354,6 @@
         const dayDiv = document.createElement('div');
         dayDiv.className = 'mb-10';
         
-        // Render Day Header
         dayDiv.innerHTML = `
           <div class="flex items-center justify-between mb-4 pl-12">
             <h3 class="font-heading font-600 text-lg text-green-600">${escapeHTML(day.title || 'Day ' + dayNum)}</h3>
@@ -400,13 +368,10 @@
         `;
         container.appendChild(dayDiv);
 
-        // Render Activities
         const activitiesContainer = dayDiv.querySelector('.day-activities');
         (day.activities || []).forEach((activity, actIndex) => {
           const actDiv = document.createElement('div');
           actDiv.className = 'relative mb-6 group';
-          
-          // Fixed Google Map link and applied HTML escaping
           const mapUrl = `https://www.google.com/maps/search/?api=1&query=$?q=${encodeURIComponent(activity.location || '')}`;
           
           actDiv.innerHTML = `
@@ -429,7 +394,6 @@
         });
       });
 
-      // Add event listeners for new buttons
       document.querySelectorAll('.add-activity-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const dayIndex = parseInt(e.currentTarget.dataset.dayIndex);
@@ -444,7 +408,6 @@
           deleteActivity(dayIndex, actIndex);
         });
       });
-
       lucide.createIcons();
     }
 
@@ -454,7 +417,7 @@
       currentActivityDayIndex = dayIndex;
       document.getElementById('activity-time').value = '';
       document.getElementById('activity-location').value = '';
-      document.getElementById('activity-location').classList.remove('ring-red-500', 'border-red-500'); // Reset validation styling
+      document.getElementById('activity-location').classList.remove('ring-red-500', 'border-red-500'); 
       document.getElementById('activity-description').value = '';
       document.getElementById('activity-modal').classList.remove('hidden');
     }
@@ -464,7 +427,6 @@
       currentActivityDayIndex = null;
     });
 
-    // Save Activity logic with validation
     document.getElementById('save-activity-btn').addEventListener('click', async () => {
       const trip = allTrips.find(t => t.__backendId === currentTripId);
       if (!trip || currentActivityDayIndex === null) return;
@@ -474,7 +436,6 @@
       const location = locationInput.value.trim();
       const description = document.getElementById('activity-description').value.trim();
 
-      // Form Validation
       if (!location) {
         locationInput.classList.add('ring-red-500', 'border-red-500');
         showToast('Location is required!', 'error');
@@ -484,11 +445,7 @@
       const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
       if (!itineraries[currentActivityDayIndex]) return;
 
-      itineraries[currentActivityDayIndex].activities.push({
-        time,
-        location,
-        description
-      });
+      itineraries[currentActivityDayIndex].activities.push({ time, location, description });
 
       const result = await window.dataSdk.update({
         ...trip,
@@ -509,7 +466,6 @@
 
       const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
       if (!itineraries[dayIndex] || !itineraries[dayIndex].activities) return;
-
       itineraries[dayIndex].activities.splice(actIndex, 1);
 
       (async () => {
@@ -517,7 +473,6 @@
           ...trip,
           itineraries: JSON.stringify(itineraries)
         });
-
         if (result.isOk) {
           renderItineraries(itineraries);
           showToast('Activity removed');
@@ -545,38 +500,86 @@
       lucide.createIcons();
     }
 
+    /* === 呢三個 Function 就係修復 Bug 嘅核心 (確保 State 同步) === */
+    
     // Toggle packing item checkbox state
     window.togglePackingItem = async function(idx) {
       const trip = allTrips.find(t => t.__backendId === currentTripId);
       if (!trip) return;
       const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
+      
       if(packingItems[idx]){
           packingItems[idx].packed = !packingItems[idx].packed;
+          
+          const newPackingString = JSON.stringify(packingItems);
+          trip.packing_items = newPackingString; // 更新本地緩存
+
           await window.dataSdk.update({
             ...trip,
-            packing_items: JSON.stringify(packingItems)
+            packing_items: newPackingString
           });
           renderPackingList(packingItems);
       }
     };
 
-    // Tab Navigation Logic
+    document.getElementById('add-packing-btn').addEventListener('click', async () => {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      const input = document.getElementById('new-packing-input');
+      const itemName = input.value.trim();
+      if (!itemName) return;
+
+      const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
+      packingItems.push({ name: itemName, packed: false });
+
+      const newPackingString = JSON.stringify(packingItems);
+      trip.packing_items = newPackingString; // 更新本地緩存
+
+      const result = await window.dataSdk.update({
+        ...trip,
+        packing_items: newPackingString
+      });
+
+      if (result.isOk) {
+        input.value = '';
+        renderPackingList(packingItems);
+      }
+    });
+
+    window.removePackingItem = function(idx) {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
+      packingItems.splice(idx, 1);
+
+      const newPackingString = JSON.stringify(packingItems);
+      trip.packing_items = newPackingString; // 更新本地緩存
+
+      (async () => {
+        const result = await window.dataSdk.update({
+          ...trip,
+          packing_items: newPackingString
+        });
+        if (result.isOk) {
+          renderPackingList(packingItems);
+        }
+      })();
+    }
+    
+    /* ======================================================= */
+
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', function() {
-        // Reset all top tabs
         document.querySelectorAll('.tab-btn').forEach(b => {
           b.classList.remove('active', 'border-green-500', 'text-green-600');
           b.classList.add('border-transparent', 'text-stone-600');
         });
-        // Set active top tab
         this.classList.add('active', 'border-green-500', 'text-green-600');
         this.classList.remove('border-transparent', 'text-stone-600');
-
-        // Show content
         document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
         document.getElementById(this.dataset.tab + '-tab').classList.remove('hidden');
-
-        // Update bottom nav buttons to match
         document.querySelectorAll('.nav-tab').forEach(nb => {
           nb.classList.remove('active', 'bg-green-50', 'text-green-600');
           nb.classList.add('text-stone-600', 'hover:bg-stone-100');
@@ -592,7 +595,6 @@
       });
     });
 
-    // Trip Creation
     document.getElementById('new-trip-btn').addEventListener('click', () => {
       document.getElementById('trip-detail-view').classList.add('hidden');
       document.getElementById('empty-state').classList.add('hidden');
@@ -617,14 +619,13 @@
 
     document.getElementById('trip-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-
       const title = document.getElementById('trip-title-input').value;
       const startDate = document.getElementById('start-date-input').value;
       const endDate = document.getElementById('end-date-input').value;
       const summary = document.getElementById('summary-input').value;
 
       const result = await window.dataSdk.create({
-        id: title, // 改為直接用 title 建立 (對應 Google Sheet 的 Tab 名稱)
+        id: title,
         title,
         start_date: startDate,
         end_date: endDate,
@@ -640,16 +641,12 @@
       }
     });
 
-    // Add Day
     document.getElementById('add-day-btn').addEventListener('click', async () => {
       const trip = allTrips.find(t => t.__backendId === currentTripId);
       if (!trip) return;
 
       const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
-      itineraries.push({
-        title: `Day ${itineraries.length + 1}`,
-        activities: []
-      });
+      itineraries.push({ title: `Day ${itineraries.length + 1}`, activities: [] });
 
       const result = await window.dataSdk.update({
         ...trip,
@@ -662,76 +659,23 @@
       }
     });
 
-    // Notes Save Logic
     document.getElementById('save-notes-btn').addEventListener('click', async () => {
       const trip = allTrips.find(t => t.__backendId === currentTripId);
       if (!trip) return;
 
       const notes = document.getElementById('notes-textarea').value;
-      const result = await window.dataSdk.update({
-        ...trip,
-        notes
-      });
-
-      if (result.isOk) {
-        showToast('Notes saved successfully!');
-      }
+      const result = await window.dataSdk.update({ ...trip, notes });
+      if (result.isOk) { showToast('Notes saved successfully!'); }
     });
 
-    // Packing List Logic
-    document.getElementById('add-packing-btn').addEventListener('click', async () => {
-      const trip = allTrips.find(t => t.__backendId === currentTripId);
-      if (!trip) return;
-
-      const input = document.getElementById('new-packing-input');
-      const itemName = input.value.trim();
-      if (!itemName) return;
-
-      const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
-      packingItems.push({ name: itemName, packed: false });
-
-      const result = await window.dataSdk.update({
-        ...trip,
-        packing_items: JSON.stringify(packingItems)
-      });
-
-      if (result.isOk) {
-        input.value = '';
-        renderPackingList(packingItems);
-      }
-    });
-
-    window.removePackingItem = function(idx) {
-      const trip = allTrips.find(t => t.__backendId === currentTripId);
-      if (!trip) return;
-
-      const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
-      packingItems.splice(idx, 1);
-
-      (async () => {
-        const result = await window.dataSdk.update({
-          ...trip,
-          packing_items: JSON.stringify(packingItems)
-        });
-
-        if (result.isOk) {
-          renderPackingList(packingItems);
-        }
-      })();
-    }
-
-    // Element SDK Initialization
     const defaultConfig = { app_title: 'My Travel Planner' };
-
     window.elementSdk.init({
       defaultConfig,
       onConfigChange: async (config) => {
         const c = { ...defaultConfig, ...config };
         document.getElementById('app-title').textContent = escapeHTML(c.app_title);
       },
-      mapToCapabilities: (config) => ({
-        recolorables: [], borderables: [], fontEditable: undefined, fontSizeable: undefined
-      }),
+      mapToCapabilities: (config) => ({ recolorables: [], borderables: [], fontEditable: undefined, fontSizeable: undefined }),
       mapToEditPanelValues: (config) => {
         const c = { ...defaultConfig, ...config };
         return new Map([['app_title', c.app_title]]);
