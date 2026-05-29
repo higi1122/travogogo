@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Travel Planner</title>
+  
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Inter', 'sans-serif'] // Changed to Inter for better readability
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    html, body { height: 100%; margin: 0; box-sizing: border-box; }
+    
+    /* Timeline Styles */
+    .timeline-line { position: absolute; left: 1.25rem; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #22c55e, #16a34a); }
+    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: #22c55e; border: 2px solid #fff; box-shadow: 0 0 0 3px #dcfce7; position: absolute; left: calc(1.25rem - 5px); top: 1.5rem; }
+    
+    /* Utility Classes */
+    .check-item input:checked + span { text-decoration: line-through; opacity: 0.5; }
+    
+    /* Animations */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp 0.6s ease forwards; opacity: 0; }
+    .fade-up:nth-child(1) { animation-delay: 0.1s; }
+    .fade-up:nth-child(2) { animation-delay: 0.2s; }
+    .fade-up:nth-child(3) { animation-delay: 0.3s; }
+    .fade-up:nth-child(4) { animation-delay: 0.4s; }
+  </style>
+ </head>
+ 
+ <body class="h-full overflow-auto bg-stone-50">
+  <div id="app" class="w-full h-full flex flex-col bg-stone-50">
+      
+   <div class="bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between">
+    <h1 id="app-title" class="font-heading font-700 text-xl text-stone-800">My Travel Planner</h1>
+    <div class="flex items-center gap-3">
+        <select id="trip-selector" class="px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg font-heading text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-green-200"> 
+            <option value="">Select a trip...</option> 
+        </select> 
+        <button id="new-trip-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg font-heading text-sm font-600 hover:bg-green-600 transition flex items-center gap-2"> 
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i> New Trip 
+        </button>
+    </div>
+   </div>
+   
+   <div id="main-content" class="flex-1 overflow-auto">
+       
+    <div id="trip-creation-view" class="hidden p-6">
+     <div class="max-w-2xl mx-auto">
+      <h2 class="font-heading font-700 text-2xl text-stone-800 mb-6">Create a New Trip</h2>
+      <form id="trip-form" class="bg-white rounded-xl p-8 border border-stone-200 space-y-4">
+       <div>
+           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Trip Title</label> 
+           <input type="text" id="trip-title-input" placeholder="e.g., Mediterranean Summer 2025" class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg font-body text-stone-600 focus:outline-none focus:ring-2 focus:ring-green-200" required>
+       </div>
+       <div class="grid md:grid-cols-2 gap-4">
+        <div>
+            <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Start Date</label> 
+            <input type="date" id="start-date-input" class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg font-body text-stone-600 focus:outline-none focus:ring-2 focus:ring-green-200" required>
+        </div>
+        <div>
+            <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">End Date</label> 
+            <input type="date" id="end-date-input" class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg font-body text-stone-600 focus:outline-none focus:ring-2 focus:ring-green-200" required>
+        </div>
+       </div>
+       <div>
+           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Trip Summary</label> 
+           <textarea id="summary-input" placeholder="Brief description of your trip..." class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg font-body text-stone-600 resize-none h-24 focus:outline-none focus:ring-2 focus:ring-green-200"></textarea>
+       </div>
+       <div class="flex gap-3 pt-4">
+           <button type="submit" class="flex-1 px-4 py-3 bg-green-500 text-white rounded-lg font-heading font-600 hover:bg-green-600 transition">Create Trip</button> 
+           <button type="button" id="cancel-trip-btn" class="flex-1 px-4 py-3 bg-stone-200 text-stone-700 rounded-lg font-heading font-600 hover:bg-stone-300 transition">Cancel</button>
+       </div>
+      </form>
+     </div>
+    </div>
+    
+    <div id="trip-detail-view" class="hidden">
+        
+     <header class="relative w-full h-[50%] min-h-[280px] overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-green-900 via-yellow-800 to-stone-900"></div>
+      <svg class="absolute inset-0 w-full h-full opacity-10" viewbox="0 0 800 400" preserveaspectratio="xMidYMid slice">
+       <path d="M0,300 Q200,200 400,280 T800,250 L800,400 L0,400 Z" fill="#fff" /> <circle cx="650" cy="80" r="40" fill="#fff" opacity="0.3" /> <path d="M100,350 L130,280 L160,350 Z" fill="#fff" opacity="0.2" /> <path d="M140,350 L180,260 L220,350 Z" fill="#fff" opacity="0.15" />
+      </svg>
+      <div class="relative z-10 flex flex-col items-center justify-center h-full text-center px-6">
+       <p class="text-green-200 font-heading text-sm tracking-widest uppercase mb-3">Adventure Awaits</p>
+       <h2 id="trip-hero-title" class="font-heading font-800 text-4xl md:text-5xl text-white mb-4">Trip Title</h2>
+       <p id="trip-hero-dates" class="font-heading text-lg text-yellow-100 font-300 tracking-wide">Dates</p>
+      </div>
+      <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-stone-50 to-transparent"></div>
+     </header>
+     
+     <div class="bg-white border-b border-stone-200 sticky top-0 z-20">
+      <div class="max-w-4xl mx-auto px-6 flex gap-1">
+          <button class="tab-btn active px-4 py-3 font-heading font-600 text-sm border-b-2 border-green-500 text-green-600" data-tab="overview">Overview</button> 
+          <button class="tab-btn px-4 py-3 font-heading font-600 text-sm border-b-2 border-transparent text-stone-600 hover:text-stone-800" data-tab="itinerary">Itinerary</button> 
+          <button class="tab-btn px-4 py-3 font-heading font-600 text-sm border-b-2 border-transparent text-stone-600 hover:text-stone-800" data-tab="notes">Notes</button> 
+          <button class="tab-btn px-4 py-3 font-heading font-600 text-sm border-b-2 border-transparent text-stone-600 hover:text-stone-800" data-tab="packing">Packing</button>
+      </div>
+     </div>
+     
+     <div id="overview-tab" class="tab-content max-w-4xl mx-auto px-6 py-12">
+      <h3 class="font-heading font-700 text-2xl text-stone-800 mb-4 flex items-center gap-2">
+          <i data-lucide="compass" style="width: 24px; height: 24px;" class="text-green-500"></i> Trip Overview
+      </h3>
+      <p id="trip-overview-summary" class="font-body text-lg text-stone-600 leading-relaxed mb-8">Trip summary goes here...</p>
+      <div class="rounded-2xl overflow-hidden border-2 border-stone-200 bg-stone-100 aspect-video flex items-center justify-center relative">
+       <svg class="w-full h-full absolute inset-0" viewbox="0 0 600 300">
+        <rect fill="#e7e5e4" width="600" height="300" /> <path d="M0,200 C100,180 200,220 300,190 S500,210 600,195 L600,300 L0,300Z" fill="#d6d3d1" /> <circle cx="180" cy="130" r="6" fill="#22c55e" /><circle cx="320" cy="150" r="6" fill="#22c55e" /><circle cx="450" cy="120" r="6" fill="#22c55e" /> <path d="M180,130 Q250,160 320,150 Q385,140 450,120" stroke="#22c55e" stroke-width="2" fill="none" stroke-dasharray="6,4" /> 
+        <text x="180" y="115" font-size="11" fill="#78716c" text-anchor="middle" font-family="Outfit">Start</text> 
+        <text x="450" y="105" font-size="11" fill="#78716c" text-anchor="middle" font-family="Outfit">End</text>
+       </svg>
+       <div class="absolute bottom-3 right-3 bg-white/80 backdrop-blur rounded-lg px-3 py-1 text-xs font-heading text-stone-500">
+        Route Map Placeholder
+       </div>
+      </div>
+     </div>
+     
+     <div id="itinerary-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
+      <div class="flex items-center justify-between mb-8">
+       <h3 class="font-heading font-700 text-2xl text-stone-800 flex items-center gap-2">
+           <i data-lucide="calendar" style="width: 24px; height: 24px;" class="text-green-500"></i> Daily Itinerary
+       </h3>
+       <button id="add-day-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg font-heading text-sm font-600 hover:bg-green-600 transition flex items-center gap-2"> 
+           <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add Day 
+       </button>
+      </div>
+      <div id="itinerary-container" class="space-y-8">
+      </div>
+      
+      <div id="activity-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+       <div class="bg-white rounded-xl p-6 w-full max-w-lg max-h-96 overflow-auto">
+        <h4 class="font-heading font-700 text-lg text-stone-800 mb-4">Add Activity</h4>
+        <div class="space-y-4">
+         <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Time</label> 
+          <input type="text" id="activity-time" placeholder="e.g., 9:00 AM" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
+         </div>
+         <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Location</label> 
+          <input type="text" id="activity-location" placeholder="e.g., Eiffel Tower" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200" required>
+         </div>
+         <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Description</label> 
+          <textarea id="activity-description" placeholder="What will you do here?" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm resize-none h-20 focus:outline-none focus:ring-2 focus:ring-green-200"></textarea>
+         </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+         <button id="save-activity-btn" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-heading font-600 hover:bg-green-600 transition">Save Activity</button> 
+         <button id="close-activity-modal-btn" class="flex-1 px-4 py-2 bg-stone-200 text-stone-700 rounded-lg font-heading font-600 hover:bg-stone-300 transition">Cancel</button>
+        </div>
+       </div>
+      </div>
+     </div>
+     
+     <div id="notes-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
+      <h3 class="font-heading font-700 text-2xl text-stone-800 mb-6 flex items-center gap-2">
+          <i data-lucide="notebook" style="width: 24px; height: 24px;" class="text-green-500"></i> Trip Notes
+      </h3>
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-stone-100">
+          <textarea id="notes-textarea" class="w-full h-64 bg-stone-50 border border-stone-200 rounded-lg p-4 font-body text-stone-600 resize-none focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Add your travel notes here..."></textarea> 
+          <button id="save-notes-btn" class="mt-4 px-6 py-2 bg-green-500 text-white rounded-lg font-heading font-600 hover:bg-green-600 transition">Save Notes</button>
+      </div>
+     </div>
+     
+     <div id="packing-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
+      <h3 class="font-heading font-700 text-2xl text-stone-800 mb-6 flex items-center gap-2">
+          <i data-lucide="luggage" style="width: 24px; height: 24px;" class="text-green-500"></i> Packing List
+      </h3>
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-stone-100">
+       <div id="packing-list" class="space-y-3 mb-6">
+       </div>
+       <div class="flex gap-2">
+           <input type="text" id="new-packing-input" placeholder="Add new item..." class="flex-1 px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200"> 
+           <button id="add-packing-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg font-heading text-sm font-600 hover:bg-green-600 transition">Add</button>
+       </div>
+      </div>
+     </div>
+    </div>
+    
+    <div id="empty-state" class="flex items-center justify-center h-full">
+     <div class="text-center py-20">
+      <i data-lucide="map-pin" style="width: 64px; height: 64px;" class="text-stone-300 mx-auto mb-4"></i>
+      <p class="font-heading font-600 text-stone-600 mb-4">No trip selected</p>
+      <p class="font-body text-stone-500 mb-6">Create a new trip or select one from the dropdown to get started</p>
+     </div>
+    </div>
+   </div>
+   
+   <nav class="bg-white border-t border-stone-200 px-6 py-3 flex justify-center gap-2">
+       <button id="tab-overview" class="nav-tab active px-4 py-2 rounded-lg font-heading text-xs font-600 text-green-600 bg-green-50">Overview</button> 
+       <button id="tab-itinerary" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Itinerary</button> 
+       <button id="tab-notes" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Notes</button> 
+       <button id="tab-packing" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Packing</button>
+   </nav>
+  </div>
+
+  <div id="toast-container" class="fixed bottom-20 right-4 z-50 flex flex-col gap-2"></div>
+
+  <script>
+    let currentTripId = null;
+    let allTrips = [];
+    
+    lucide.createIcons();
+
+    // Utility: XSS Escaping Helper
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.toString().replace(/[&<>'"]/g, tag => ({
+        '&': '&', '<': '<', '>': '>', "'": '&#39;', '"': '&quot;'
+      }[tag]));
+    }
+
+    // Utility: Toast Notifications
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-stone-800' : 'bg-red-500';
+      toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-lg font-body text-sm font-500 flex items-center gap-2 transition-all duration-300 transform translate-y-10 opacity-0`;
+      
+      const icon = type === 'success' ? 'check-circle-2' : 'alert-circle';
+      toast.innerHTML = `<i data-lucide="${icon}" style="width: 16px; height: 16px;"></i> ${escapeHTML(message)}`;
+      
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      // Animate in
+      setTimeout(() => toast.classList.remove('translate-y-10', 'opacity-0'), 10);
+      
+      // Animate out and remove
+      setTimeout(() => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    const dataHandler = {
+      onDataChanged(data) {
+        allTrips = data || [];
+        updateTripSelector();
+        if (currentTripId && allTrips.find(t => t.__backendId === currentTripId)) {
+          displayTrip(currentTripId);
+        } else if (allTrips.length > 0) {
+          currentTripId = allTrips[0].__backendId;
+          displayTrip(currentTripId);
+        }
+      }
+    };
+
+    // --- 替換為連接 Google Sheet 嘅自訂 SDK ---
+    
+    // ⚠️ 請將下面呢條 URL 換成你喺 Apps Script 部署後得到嘅「Web App URL」
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyVFriu7BI1HD2c3ZkOooO2DRSCiDU8E7y3GlWqHTTFFnS7evvogSx-wwSO5SsrtDdozA/exec";
+
+    const customDataSdk = {
+      // 1. 讀取資料 (GET)
+      async init(handler) {
+        try {
+          showToast('正在同步 Google Sheet 資料...', 'success');
+          
+          const response = await fetch(GAS_API_URL);
+          const data = await response.json();
+          
+          // 將 Google Sheet 拎到嘅資料交畀 App 更新畫面
+          handler.onDataChanged(data);
+          showToast('資料同步成功！', 'success');
+          return { isOk: true };
+        } catch (error) {
+          console.error("讀取失敗:", error);
+          showToast('無法連接 Google Sheet，請檢查 URL', 'error');
+          return { isOk: false };
+        }
+      },
+      
+      // 2. 更新資料 (POST)
+      async update(tripData) {
+        try {
+          showToast('正在儲存至 Google Sheet...', 'success');
+          const response = await fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify(tripData)
+          });
+          
+          const result = await response.json();
+          if (result.status === 'success') {
+            return { isOk: true };
+          } else {
+            console.error("Sheet 錯誤:", result.message);
+            showToast('儲存失敗', 'error');
+            return { isOk: false };
+          }
+        } catch (error) {
+          console.error("更新失敗:", error);
+          showToast('儲存失敗，請檢查網絡', 'error');
+          return { isOk: false };
+        }
+      },
+
+      // 3. 建立新 Trip (POST - Apps Script 會幫你開新 Tab)
+      async create(tripData) {
+        return this.update(tripData); 
+      }
+    };
+
+    // 初始化我哋嘅 Custom SDK
+    (async () => {
+      // 攔截並覆寫系統原本嘅 SDK
+      window.dataSdk = customDataSdk; 
+      const initResult = await window.dataSdk.init(dataHandler);
+      if (!initResult.isOk) {
+        console.error('無法連接到 Google Sheets 後台');
+      }
+    })();
+    // --- 替換完畢 ---
+
+    function updateTripSelector() {
+      const selector = document.getElementById('trip-selector');
+      selector.innerHTML = '<option value="">Select a trip...</option>';
+      allTrips.forEach(trip => {
+        const option = document.createElement('option');
+        option.value = trip.__backendId;
+        option.textContent = trip.title;
+        selector.appendChild(option);
+      });
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function displayTrip(tripId) {
+      const trip = allTrips.find(t => t.__backendId === tripId);
+      if (!trip) return;
+
+      currentTripId = tripId;
+      document.getElementById('trip-creation-view').classList.add('hidden');
+      document.getElementById('trip-detail-view').classList.remove('hidden');
+      document.getElementById('empty-state').classList.add('hidden');
+
+      // Update hero (escaped for safety)
+      document.getElementById('trip-hero-title').textContent = trip.title;
+      document.getElementById('trip-hero-dates').textContent = `${formatDate(trip.start_date)} – ${formatDate(trip.end_date)}`;
+      document.getElementById('trip-overview-summary').textContent = trip.summary;
+
+      // Update selector
+      document.getElementById('trip-selector').value = tripId;
+
+      // Load itineraries
+      const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
+      renderItineraries(itineraries);
+
+      // Load notes
+      document.getElementById('notes-textarea').value = trip.notes || '';
+
+      // Load packing
+      const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
+      renderPackingList(packingItems);
+    }
+
+    function renderItineraries(itineraries) {
+      const container = document.getElementById('itinerary-container');
+      container.innerHTML = '';
+
+      itineraries.forEach((day, dayIndex) => {
+        const dayNum = dayIndex + 1;
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'mb-10';
+        
+        // Render Day Header
+        dayDiv.innerHTML = `
+          <div class="flex items-center justify-between mb-4 pl-12">
+            <h3 class="font-heading font-600 text-lg text-green-600">${escapeHTML(day.title || 'Day ' + dayNum)}</h3>
+            <button class="add-activity-btn px-3 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-heading font-600 hover:bg-green-100 transition flex items-center gap-1" data-day-index="${dayIndex}">
+              <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Activity
+            </button>
+          </div>
+          <div class="relative pl-12">
+            <div class="timeline-line"></div>
+            <div id="day-${dayIndex}" class="day-activities"></div>
+          </div>
+        `;
+        container.appendChild(dayDiv);
+
+        // Render Activities
+        const activitiesContainer = dayDiv.querySelector('.day-activities');
+        (day.activities || []).forEach((activity, actIndex) => {
+          const actDiv = document.createElement('div');
+          actDiv.className = 'relative mb-6 group';
+          
+          // Fixed Google Map link and applied HTML escaping
+          const mapUrl = `https://www.google.com/maps/search/?api=1&query=$?q=${encodeURIComponent(activity.location || '')}`;
+          
+          actDiv.innerHTML = `
+            <div class="timeline-dot"></div>
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 ml-4">
+              <p class="text-xs font-heading text-stone-400 uppercase tracking-wide mb-1">${escapeHTML(activity.time || 'TBD')}</p>
+              <h4 class="font-heading font-600 text-stone-800">${escapeHTML(activity.location || 'Location')}</h4>
+              <p class="font-body text-stone-500 text-sm mt-1">${escapeHTML(activity.description || 'No description')}</p>
+              <div class="flex items-center justify-between mt-3">
+                <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-heading font-500 hover:bg-green-100 transition">
+                  📍 Open in Google Maps
+                </a>
+                <button class="delete-activity-btn text-stone-300 hover:text-red-600 transition" aria-label="Delete activity" data-day-index="${dayIndex}" data-activity-index="${actIndex}">
+                  <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                </button>
+              </div>
+            </div>
+          `;
+          activitiesContainer.appendChild(actDiv);
+        });
+      });
+
+      // Add event listeners for new buttons
+      document.querySelectorAll('.add-activity-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const dayIndex = parseInt(e.currentTarget.dataset.dayIndex);
+          openActivityModal(dayIndex);
+        });
+      });
+
+      document.querySelectorAll('.delete-activity-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const dayIndex = parseInt(e.currentTarget.dataset.dayIndex);
+          const actIndex = parseInt(e.currentTarget.dataset.activityIndex);
+          deleteActivity(dayIndex, actIndex);
+        });
+      });
+
+      lucide.createIcons();
+    }
+
+    let currentActivityDayIndex = null;
+
+    function openActivityModal(dayIndex) {
+      currentActivityDayIndex = dayIndex;
+      document.getElementById('activity-time').value = '';
+      document.getElementById('activity-location').value = '';
+      document.getElementById('activity-location').classList.remove('ring-red-500', 'border-red-500'); // Reset validation styling
+      document.getElementById('activity-description').value = '';
+      document.getElementById('activity-modal').classList.remove('hidden');
+    }
+
+    document.getElementById('close-activity-modal-btn').addEventListener('click', () => {
+      document.getElementById('activity-modal').classList.add('hidden');
+      currentActivityDayIndex = null;
+    });
+
+    // Save Activity logic with validation
+    document.getElementById('save-activity-btn').addEventListener('click', async () => {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip || currentActivityDayIndex === null) return;
+
+      const time = document.getElementById('activity-time').value.trim();
+      const locationInput = document.getElementById('activity-location');
+      const location = locationInput.value.trim();
+      const description = document.getElementById('activity-description').value.trim();
+
+      // Form Validation
+      if (!location) {
+        locationInput.classList.add('ring-red-500', 'border-red-500');
+        showToast('Location is required!', 'error');
+        return;
+      }
+
+      const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
+      if (!itineraries[currentActivityDayIndex]) return;
+
+      itineraries[currentActivityDayIndex].activities.push({
+        time,
+        location,
+        description
+      });
+
+      const result = await window.dataSdk.update({
+        ...trip,
+        itineraries: JSON.stringify(itineraries)
+      });
+
+      if (result.isOk) {
+        document.getElementById('activity-modal').classList.add('hidden');
+        renderItineraries(itineraries);
+        showToast('Activity added!');
+        currentActivityDayIndex = null;
+      }
+    });
+
+    function deleteActivity(dayIndex, actIndex) {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
+      if (!itineraries[dayIndex] || !itineraries[dayIndex].activities) return;
+
+      itineraries[dayIndex].activities.splice(actIndex, 1);
+
+      (async () => {
+        const result = await window.dataSdk.update({
+          ...trip,
+          itineraries: JSON.stringify(itineraries)
+        });
+
+        if (result.isOk) {
+          renderItineraries(itineraries);
+          showToast('Activity removed');
+        }
+      })();
+    }
+
+    function renderPackingList(items) {
+      const container = document.getElementById('packing-list');
+      container.innerHTML = '';
+      items.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between gap-3 p-2 hover:bg-stone-50 rounded';
+        div.innerHTML = `
+          <div class="flex items-center gap-3 flex-1">
+            <input type="checkbox" class="w-4 h-4 rounded border-stone-300 text-green-500 focus:ring-green-200 cursor-pointer" ${item.packed ? 'checked' : ''} onchange="togglePackingItem(${idx})">
+            <span class="font-body text-stone-600 text-sm ${item.packed ? 'line-through opacity-50' : ''}">${escapeHTML(item.name)}</span>
+          </div>
+          <button class="text-stone-400 hover:text-red-500 transition" aria-label="Remove item" onclick="removePackingItem(${idx})">
+            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+          </button>
+        `;
+        container.appendChild(div);
+      });
+      lucide.createIcons();
+    }
+
+    // Toggle packing item checkbox state
+    window.togglePackingItem = async function(idx) {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+      const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
+      if(packingItems[idx]){
+          packingItems[idx].packed = !packingItems[idx].packed;
+          await window.dataSdk.update({
+            ...trip,
+            packing_items: JSON.stringify(packingItems)
+          });
+          renderPackingList(packingItems);
+      }
+    };
+
+    // Tab Navigation Logic
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        // Reset all top tabs
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.classList.remove('active', 'border-green-500', 'text-green-600');
+          b.classList.add('border-transparent', 'text-stone-600');
+        });
+        // Set active top tab
+        this.classList.add('active', 'border-green-500', 'text-green-600');
+        this.classList.remove('border-transparent', 'text-stone-600');
+
+        // Show content
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.getElementById(this.dataset.tab + '-tab').classList.remove('hidden');
+
+        // Update bottom nav buttons to match
+        document.querySelectorAll('.nav-tab').forEach(nb => {
+          nb.classList.remove('active', 'bg-green-50', 'text-green-600');
+          nb.classList.add('text-stone-600', 'hover:bg-stone-100');
+        });
+        document.getElementById('tab-' + this.dataset.tab).classList.add('active', 'bg-green-50', 'text-green-600');
+      });
+    });
+
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const tabName = this.id.replace('tab-', '');
+        document.querySelector(`[data-tab="${tabName}"]`).click();
+      });
+    });
+
+    // Trip Creation
+    document.getElementById('new-trip-btn').addEventListener('click', () => {
+      document.getElementById('trip-detail-view').classList.add('hidden');
+      document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('trip-creation-view').classList.remove('hidden');
+    });
+
+    document.getElementById('cancel-trip-btn').addEventListener('click', () => {
+      document.getElementById('trip-creation-view').classList.add('hidden');
+      if (currentTripId) {
+        document.getElementById('trip-detail-view').classList.remove('hidden');
+      } else {
+        document.getElementById('empty-state').classList.remove('hidden');
+      }
+      document.getElementById('trip-form').reset();
+    });
+
+    document.getElementById('trip-selector').addEventListener('change', (e) => {
+      if (e.target.value) {
+        displayTrip(e.target.value);
+      }
+    });
+
+    document.getElementById('trip-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById('trip-title-input').value;
+      const startDate = document.getElementById('start-date-input').value;
+      const endDate = document.getElementById('end-date-input').value;
+      const summary = document.getElementById('summary-input').value;
+
+      const result = await window.dataSdk.create({
+        id: title, // 改為直接用 title 建立 (對應 Google Sheet 的 Tab 名稱)
+        title,
+        start_date: startDate,
+        end_date: endDate,
+        summary,
+        itineraries: JSON.stringify([]),
+        notes: '',
+        packing_items: JSON.stringify([])
+      });
+
+      if (result.isOk) {
+        document.getElementById('trip-form').reset();
+        showToast('Trip created successfully!');
+      }
+    });
+
+    // Add Day
+    document.getElementById('add-day-btn').addEventListener('click', async () => {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
+      itineraries.push({
+        title: `Day ${itineraries.length + 1}`,
+        activities: []
+      });
+
+      const result = await window.dataSdk.update({
+        ...trip,
+        itineraries: JSON.stringify(itineraries)
+      });
+
+      if (result.isOk) {
+        renderItineraries(itineraries);
+        showToast('New day added!');
+      }
+    });
+
+    // Notes Save Logic
+    document.getElementById('save-notes-btn').addEventListener('click', async () => {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      const notes = document.getElementById('notes-textarea').value;
+      const result = await window.dataSdk.update({
+        ...trip,
+        notes
+      });
+
+      if (result.isOk) {
+        showToast('Notes saved successfully!');
+      }
+    });
+
+    // Packing List Logic
+    document.getElementById('add-packing-btn').addEventListener('click', async () => {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      const input = document.getElementById('new-packing-input');
+      const itemName = input.value.trim();
+      if (!itemName) return;
+
+      const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
+      packingItems.push({ name: itemName, packed: false });
+
+      const result = await window.dataSdk.update({
+        ...trip,
+        packing_items: JSON.stringify(packingItems)
+      });
+
+      if (result.isOk) {
+        input.value = '';
+        renderPackingList(packingItems);
+      }
+    });
+
+    window.removePackingItem = function(idx) {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
+      packingItems.splice(idx, 1);
+
+      (async () => {
+        const result = await window.dataSdk.update({
+          ...trip,
+          packing_items: JSON.stringify(packingItems)
+        });
+
+        if (result.isOk) {
+          renderPackingList(packingItems);
+        }
+      })();
+    }
+
+    // Element SDK Initialization
+    const defaultConfig = { app_title: 'My Travel Planner' };
+
+    window.elementSdk.init({
+      defaultConfig,
+      onConfigChange: async (config) => {
+        const c = { ...defaultConfig, ...config };
+        document.getElementById('app-title').textContent = escapeHTML(c.app_title);
+      },
+      mapToCapabilities: (config) => ({
+        recolorables: [], borderables: [], fontEditable: undefined, fontSizeable: undefined
+      }),
+      mapToEditPanelValues: (config) => {
+        const c = { ...defaultConfig, ...config };
+        return new Map([['app_title', c.app_title]]);
+      }
+    });
+  </script>
+ </body>
+</html>
