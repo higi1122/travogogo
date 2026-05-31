@@ -9,6 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
@@ -444,7 +445,7 @@ itineraries.forEach((day, dayIndex) => {
           </div>
           <div class="relative pl-8">
             <div class="timeline-line ${themeLine}"></div>
-            <div id="day-${dayIndex}" class="day-activities"></div>
+            <div id="day-${dayIndex}" class="day-activities min-h-[60px]" data-day-index="${dayIndex}"></div>
           </div>
         `;
         container.appendChild(dayDiv);
@@ -452,7 +453,8 @@ itineraries.forEach((day, dayIndex) => {
         const activitiesContainer = dayDiv.querySelector('.day-activities');
         (day.activities || []).forEach((activity, actIndex) => {
           const actDiv = document.createElement('div');
-          actDiv.className = 'relative mb-6 group';
+          // 🌟 加入 cursor-grab 提示用家可以拖拉
+          actDiv.className = 'relative mb-6 group cursor-grab active:cursor-grabbing';
           
           // 🗺️ 修復咗地圖連結 (轉用最標準嘅 Google Maps URL)
           const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(activity.location || '')}`;
@@ -515,6 +517,60 @@ itineraries.forEach((day, dayIndex) => {
       });
 
       lucide.createIcons();
+
+      // 🌟 初始化拖拉功能 (Drag and Drop)
+      document.querySelectorAll('.day-activities').forEach((container) => {
+        new Sortable(container, {
+          group: 'itinerary-days',  // 允許跨日拖拉
+          animation: 200,           // 卡片移位嘅順滑動畫
+          delay: 200,               // 📱 手機專用：長按 0.2 秒先會觸發，防止平時碌上碌落嗰陣誤觸
+          delayOnTouchOnly: true,   // 💻 電腦版滑鼠唔使等，一撳就拉得
+          ghostClass: 'opacity-40', // 拖緊嗰陣原位會有半透明殘影
+          filter: 'button, a',      // 確保撳「編輯/刪除/地圖」掣唔會當咗係拖拉
+          preventOnFilter: false, 
+          onEnd: async function (evt) {
+            const fromDayIdx = parseInt(evt.from.dataset.dayIndex);
+            const toDayIdx = parseInt(evt.to.dataset.dayIndex);
+            const oldActIdx = evt.oldIndex;
+            const newActIdx = evt.newIndex;
+
+            // 如果拉完放返喺原位，就咩都唔使做
+            if (fromDayIdx === toDayIdx && oldActIdx === newActIdx) return;
+
+            const trip = allTrips.find(t => t.__backendId === currentTripId);
+            if (!trip) return;
+
+            const currentItineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
+
+            // 1. 從舊日子抽起嗰個活動
+            const [movedActivity] = currentItineraries[fromDayIdx].activities.splice(oldActIdx, 1);
+
+            // 2. 防呆：如果拉去嘅新日子完全冇活動，幫佢開返個陣列
+            if (!currentItineraries[toDayIdx].activities) {
+              currentItineraries[toDayIdx].activities = [];
+            }
+
+            // 3. 將活動塞入新日子嘅指定位置
+            currentItineraries[toDayIdx].activities.splice(newActIdx, 0, movedActivity);
+
+            // 🐛 補回同步更新本地記憶體
+            const newItinerariesStr = JSON.stringify(currentItineraries);
+            trip.itineraries = newItinerariesStr;
+
+            // 4. 同步儲存去 Google Sheet
+            const result = await window.dataSdk.update({
+              ...trip,
+              itineraries: newItinerariesStr
+            });
+
+            if (result.isOk) {
+              // 重新渲染畫面，確保由綠色日拉去啡色日嗰陣，卡片識自動轉色！
+              renderItineraries(currentItineraries); 
+              showToast('活動次序已更新！');
+            }
+          }
+        });
+      });
     }
 
 let currentActivityDayIndex = null;
@@ -588,9 +644,13 @@ let currentActivityDayIndex = null;
         itineraries[currentActivityDayIndex].activities.push(newActivity);
       }
 
+      // 🐛 補回同步更新本地記憶體
+      const newItinerariesStr = JSON.stringify(itineraries);
+      trip.itineraries = newItinerariesStr;
+
       const result = await window.dataSdk.update({
         ...trip,
-        itineraries: JSON.stringify(itineraries)
+        itineraries: newItinerariesStr
       });
 
       if (result.isOk) {
@@ -610,11 +670,15 @@ let currentActivityDayIndex = null;
       if (!itineraries[dayIndex] || !itineraries[dayIndex].activities) return;
 
       itineraries[dayIndex].activities.splice(actIndex, 1);
+      
+      // 🐛 補回同步更新本地記憶體
+      const newItinerariesStr = JSON.stringify(itineraries);
+      trip.itineraries = newItinerariesStr;
 
       (async () => {
         const result = await window.dataSdk.update({
           ...trip,
-          itineraries: JSON.stringify(itineraries)
+          itineraries: newItinerariesStr
         });
 
         if (result.isOk) {
@@ -724,10 +788,14 @@ let currentActivityDayIndex = null;
         title: `Day ${itineraries.length + 1}`,
         activities: []
       });
+      
+      // 🐛 補回同步更新本地記憶體
+      const newItinerariesStr = JSON.stringify(itineraries);
+      trip.itineraries = newItinerariesStr;
 
       const result = await window.dataSdk.update({
         ...trip,
-        itineraries: JSON.stringify(itineraries)
+        itineraries: newItinerariesStr
       });
 
       if (result.isOk) {
