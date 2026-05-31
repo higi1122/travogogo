@@ -29,8 +29,8 @@
     html, body { height: 100%; margin: 0; box-sizing: border-box; }
     
     /* Timeline Styles */
-    .timeline-line { position: absolute; left: 12px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #22c55e, #16a34a); }
-    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: #22c55e; border: 2px solid #fff; box-shadow: 0 0 0 3px #dcfce7; position: absolute; left: -25px; top: 1.5rem; z-index: 10; }
+    .timeline-line { position: absolute; left: 12px; top: 0; bottom: 0; width: 2px; }
+    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; position: absolute; left: -25px; top: 1.5rem; z-index: 10; }
     
     /* Utility Classes */
     .check-item input:checked + span { text-decoration: line-through; opacity: 0.5; }
@@ -400,19 +400,30 @@
         }
       }
 
-      itineraries.forEach((day, dayIndex) => {
+itineraries.forEach((day, dayIndex) => {
         const dayNum = dayIndex + 1;
+        const isGreen = dayIndex % 2 === 0;
+        
+        // 🎨 主題顏色變數 (單數日綠色，雙數日大地啡色 amber)
+        const themeText = isGreen ? 'text-green-600' : 'text-amber-700';
+        const themeBgLight = isGreen ? 'bg-green-50' : 'bg-amber-50';
+        const themeHoverBg = isGreen ? 'hover:bg-green-100' : 'hover:bg-amber-100';
+        const themeHoverBtn = isGreen ? 'hover:bg-green-500' : 'hover:bg-amber-600';
+        const themeHoverText = isGreen ? 'hover:text-green-500' : 'hover:text-amber-600';
+        const themeBorderHover = isGreen ? 'group-hover:border-green-200' : 'group-hover:border-amber-200';
+        const themeLine = isGreen ? 'bg-gradient-to-b from-green-400 to-green-600' : 'bg-gradient-to-b from-amber-500 to-amber-700';
+        const themeDotBg = isGreen ? 'bg-green-500' : 'bg-amber-600';
+        const themeDotShadow = isGreen ? 'shadow-[0_0_0_3px_#dcfce7]' : 'shadow-[0_0_0_3px_#fef3c7]';
         
         // 🌟 自動生成 Day 按鈕並加入 Smooth Scroll
         if (navContainer) {
           const navBtn = document.createElement('button');
-          navBtn.className = 'whitespace-nowrap px-4 py-1.5 bg-stone-100 text-stone-600 hover:bg-green-500 hover:text-white rounded-full font-heading text-sm font-600 transition';
+          navBtn.className = `whitespace-nowrap px-4 py-1.5 bg-stone-100 text-stone-600 ${themeHoverBtn} hover:text-white rounded-full font-heading text-sm font-600 transition`;
           navBtn.textContent = `Day ${dayNum}`;
- navBtn.onclick = () => {
+          navBtn.onclick = () => {
             const target = document.getElementById(`day-section-${dayIndex}`);
             const scrollContainer = document.getElementById('main-content');
             if(target && scrollContainer) {
-              // 🧮 修復降落點：預留 70px 空間，保證「Day X」標題唔會被導航列遮住
               const y = target.getBoundingClientRect().top + scrollContainer.scrollTop - scrollContainer.getBoundingClientRect().top - 70;
               scrollContainer.scrollTo({ top: y, behavior: 'smooth' });
             }
@@ -421,44 +432,44 @@
         }
 
         const dayDiv = document.createElement('div');
-        dayDiv.id = `day-section-${dayIndex}`; // 🌟 補返呢個專屬 ID 畀個掣瞄準！
+        dayDiv.id = `day-section-${dayIndex}`; 
         dayDiv.className = 'mb-10';
         
         dayDiv.innerHTML = `
           <div class="flex items-center justify-between mb-4 pl-8">
-            <h3 class="font-heading font-600 text-lg text-green-600">${escapeHTML(day.title || 'Day ' + dayNum)}</h3>
-            <button class="add-activity-btn px-3 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-heading font-600 hover:bg-green-100 transition flex items-center gap-1" data-day-index="${dayIndex}">
+            <h3 class="font-heading font-600 text-lg ${themeText}">${escapeHTML(day.title || 'Day ' + dayNum)}</h3>
+            <button class="add-activity-btn px-3 py-1 ${themeBgLight} ${themeText} rounded-lg text-xs font-heading font-600 ${themeHoverBg} transition flex items-center gap-1" data-day-index="${dayIndex}">
               <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Activity
             </button>
           </div>
           <div class="relative pl-8">
-            <div class="timeline-line"></div>
+            <div class="timeline-line ${themeLine}"></div>
             <div id="day-${dayIndex}" class="day-activities"></div>
           </div>
         `;
         container.appendChild(dayDiv);
 
- const activitiesContainer = dayDiv.querySelector('.day-activities');
+        const activitiesContainer = dayDiv.querySelector('.day-activities');
         (day.activities || []).forEach((activity, actIndex) => {
           const actDiv = document.createElement('div');
           actDiv.className = 'relative mb-6 group';
           
-          // 修復咗地圖連結，轉用標準 Google Maps 搜尋網址
+          // 🗺️ 修復咗地圖連結 (轉用最標準嘅 Google Maps URL)
           const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(activity.location || '')}`;
           const mapButtonHTML = activity.showMap !== false 
-            ? `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-heading font-500 hover:bg-green-100 transition">📍 Open in Google Maps</a>`
+            ? `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 ${themeBgLight} ${themeText} rounded-lg text-xs font-heading font-500 ${themeHoverBg} transition">📍 Open in Google Maps</a>`
             : `<div></div>`;
           
           actDiv.innerHTML = `
-            <div class="timeline-dot"></div>
-            <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 group-hover:border-green-200 transition w-full">
+            <div class="timeline-dot ${themeDotBg} ${themeDotShadow}"></div>
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 ${themeBorderHover} transition w-full">
               <div class="flex justify-between items-start">
                 <div>
                   <p class="text-xs font-heading text-stone-400 uppercase tracking-wide mb-1">${escapeHTML(activity.time || 'TBD')}</p>
                   <h4 class="font-heading font-600 text-stone-800">${escapeHTML(activity.location || 'Location')}</h4>
                 </div>
-        <div class="flex gap-2 text-stone-300">
-                  <button class="edit-activity-btn hover:text-green-500 transition" aria-label="Edit activity" title="編輯" data-day-index="${dayIndex}" data-activity-index="${actIndex}">
+                <div class="flex gap-2 text-stone-300">
+                  <button class="edit-activity-btn ${themeHoverText} transition" aria-label="Edit activity" title="編輯" data-day-index="${dayIndex}" data-activity-index="${actIndex}">
                     <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
                   </button>
                   <button class="delete-activity-btn hover:text-red-600 transition" aria-label="Delete activity" title="刪除" data-day-index="${dayIndex}" data-activity-index="${actIndex}">
