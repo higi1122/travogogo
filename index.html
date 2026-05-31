@@ -161,6 +161,10 @@
           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Description</label> 
           <textarea id="activity-description" placeholder="What will you do here?" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm resize-none h-20 focus:outline-none focus:ring-2 focus:ring-green-200"></textarea>
          </div>
+         <div class="flex items-center gap-2 mt-2">
+          <input type="checkbox" id="activity-show-map" checked class="w-4 h-4 rounded border-stone-300 text-green-500 focus:ring-green-200 cursor-pointer">
+          <label for="activity-show-map" class="font-body text-stone-600 text-sm cursor-pointer">顯示 Google Maps 按鈕</label>
+         </div>
         </div>
         <div class="flex gap-3 mt-6">
          <button id="save-activity-btn" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-heading font-600 hover:bg-green-600 transition">Save Activity</button> 
@@ -344,7 +348,7 @@
     function formatDate(dateStr) {
       if (!dateStr) return '';
       const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
     }
 
     function displayTrip(tripId) {
@@ -400,28 +404,37 @@
         `;
         container.appendChild(dayDiv);
 
-        // Render Activities
-        const activitiesContainer = dayDiv.querySelector('.day-activities');
+ const activitiesContainer = dayDiv.querySelector('.day-activities');
         (day.activities || []).forEach((activity, actIndex) => {
           const actDiv = document.createElement('div');
           actDiv.className = 'relative mb-6 group';
           
-          // Fixed Google Map link and applied HTML escaping
-          const mapUrl = `https://www.google.com/maps/search/?api=1&query=$?q=${encodeURIComponent(activity.location || '')}`;
+          // 修復咗地圖連結，轉用標準 Google Maps 搜尋網址
+          const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(activity.location || '')}`;
+          const mapButtonHTML = activity.showMap !== false 
+            ? `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-heading font-500 hover:bg-green-100 transition">📍 Open in Google Maps</a>`
+            : `<div></div>`;
           
           actDiv.innerHTML = `
             <div class="timeline-dot"></div>
-            <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 ml-4">
-              <p class="text-xs font-heading text-stone-400 uppercase tracking-wide mb-1">${escapeHTML(activity.time || 'TBD')}</p>
-              <h4 class="font-heading font-600 text-stone-800">${escapeHTML(activity.location || 'Location')}</h4>
-              <p class="font-body text-stone-500 text-sm mt-1">${escapeHTML(activity.description || 'No description')}</p>
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 ml-4 group-hover:border-green-200 transition">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-xs font-heading text-stone-400 uppercase tracking-wide mb-1">${escapeHTML(activity.time || 'TBD')}</p>
+                  <h4 class="font-heading font-600 text-stone-800">${escapeHTML(activity.location || 'Location')}</h4>
+                </div>
+        <div class="flex gap-2 text-stone-300">
+                  <button class="edit-activity-btn hover:text-green-500 transition" aria-label="Edit activity" title="編輯" data-day-index="${dayIndex}" data-activity-index="${actIndex}">
+                    <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
+                  </button>
+                  <button class="delete-activity-btn hover:text-red-600 transition" aria-label="Delete activity" title="刪除" data-day-index="${dayIndex}" data-activity-index="${actIndex}">
+                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                  </button>
+                </div>
+              </div>
+              <p class="font-body text-stone-500 text-sm mt-1">${escapeHTML(activity.description || '')}</p>
               <div class="flex items-center justify-between mt-3">
-                <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-heading font-500 hover:bg-green-100 transition">
-                  📍 Open in Google Maps
-                </a>
-                <button class="delete-activity-btn text-stone-300 hover:text-red-600 transition" aria-label="Delete activity" data-day-index="${dayIndex}" data-activity-index="${actIndex}">
-                  <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
-                </button>
+                ${mapButtonHTML}
               </div>
             </div>
           `;
@@ -430,6 +443,14 @@
       });
 
       // Add event listeners for new buttons
+      document.querySelectorAll('.edit-activity-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const dayIndex = parseInt(e.currentTarget.dataset.dayIndex);
+          const actIndex = parseInt(e.currentTarget.dataset.activityIndex);
+          openActivityModal(dayIndex, actIndex);
+        });
+      });
+
       document.querySelectorAll('.add-activity-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const dayIndex = parseInt(e.currentTarget.dataset.dayIndex);
@@ -448,20 +469,46 @@
       lucide.createIcons();
     }
 
-    let currentActivityDayIndex = null;
+let currentActivityDayIndex = null;
+    let currentActivityEditIndex = null;
 
-    function openActivityModal(dayIndex) {
+    function openActivityModal(dayIndex, actIndex = null) {
       currentActivityDayIndex = dayIndex;
-      document.getElementById('activity-time').value = '';
-      document.getElementById('activity-location').value = '';
-      document.getElementById('activity-location').classList.remove('ring-red-500', 'border-red-500'); // Reset validation styling
-      document.getElementById('activity-description').value = '';
+      currentActivityEditIndex = actIndex;
+      
+      const modalTitle = document.querySelector('#activity-modal h4');
+      const timeInput = document.getElementById('activity-time');
+      const locationInput = document.getElementById('activity-location');
+      const descInput = document.getElementById('activity-description');
+      const mapToggle = document.getElementById('activity-show-map');
+      
+      locationInput.classList.remove('ring-red-500', 'border-red-500'); 
+
+      if (actIndex !== null) {
+        modalTitle.textContent = 'Edit Activity';
+        const trip = allTrips.find(t => t.__backendId === currentTripId);
+        const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
+        const act = itineraries[dayIndex].activities[actIndex];
+        
+        timeInput.value = act.time || '';
+        locationInput.value = act.location || '';
+        descInput.value = act.description || '';
+        if(mapToggle) mapToggle.checked = act.showMap !== false;
+      } else {
+        modalTitle.textContent = 'Add Activity';
+        timeInput.value = '';
+        locationInput.value = '';
+        descInput.value = '';
+        if(mapToggle) mapToggle.checked = true;
+      }
+      
       document.getElementById('activity-modal').classList.remove('hidden');
     }
 
     document.getElementById('close-activity-modal-btn').addEventListener('click', () => {
       document.getElementById('activity-modal').classList.add('hidden');
       currentActivityDayIndex = null;
+      currentActivityEditIndex = null;
     });
 
     // Save Activity logic with validation
@@ -473,8 +520,9 @@
       const locationInput = document.getElementById('activity-location');
       const location = locationInput.value.trim();
       const description = document.getElementById('activity-description').value.trim();
+      const mapToggle = document.getElementById('activity-show-map');
+      const showMap = mapToggle ? mapToggle.checked : true;
 
-      // Form Validation
       if (!location) {
         locationInput.classList.add('ring-red-500', 'border-red-500');
         showToast('Location is required!', 'error');
@@ -484,11 +532,13 @@
       const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
       if (!itineraries[currentActivityDayIndex]) return;
 
-      itineraries[currentActivityDayIndex].activities.push({
-        time,
-        location,
-        description
-      });
+      const newActivity = { time, location, description, showMap };
+
+      if (currentActivityEditIndex !== null) {
+        itineraries[currentActivityDayIndex].activities[currentActivityEditIndex] = newActivity;
+      } else {
+        itineraries[currentActivityDayIndex].activities.push(newActivity);
+      }
 
       const result = await window.dataSdk.update({
         ...trip,
@@ -498,8 +548,9 @@
       if (result.isOk) {
         document.getElementById('activity-modal').classList.add('hidden');
         renderItineraries(itineraries);
-        showToast('Activity added!');
+        showToast(currentActivityEditIndex !== null ? 'Activity updated!' : 'Activity added!');
         currentActivityDayIndex = null;
+        currentActivityEditIndex = null;
       }
     });
 
