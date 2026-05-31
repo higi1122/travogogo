@@ -29,8 +29,8 @@
     html, body { height: 100%; margin: 0; box-sizing: border-box; }
     
     /* Timeline Styles */
-    .timeline-line { position: absolute; left: 1.25rem; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #22c55e, #16a34a); }
-    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: #22c55e; border: 2px solid #fff; box-shadow: 0 0 0 3px #dcfce7; position: absolute; left: calc(1.25rem - 5px); top: 1.5rem; }
+    .timeline-line { position: absolute; left: 12px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #22c55e, #16a34a); }
+    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; background: #22c55e; border: 2px solid #fff; box-shadow: 0 0 0 3px #dcfce7; position: absolute; left: -25px; top: 1.5rem; z-index: 10; }
     
     /* Utility Classes */
     .check-item input:checked + span { text-decoration: line-through; opacity: 0.5; }
@@ -391,13 +391,13 @@
         
         // Render Day Header
         dayDiv.innerHTML = `
-          <div class="flex items-center justify-between mb-4 pl-12">
+          <div class="flex items-center justify-between mb-4 pl-8">
             <h3 class="font-heading font-600 text-lg text-green-600">${escapeHTML(day.title || 'Day ' + dayNum)}</h3>
             <button class="add-activity-btn px-3 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-heading font-600 hover:bg-green-100 transition flex items-center gap-1" data-day-index="${dayIndex}">
               <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Activity
             </button>
           </div>
-          <div class="relative pl-12">
+          <div class="relative pl-8">
             <div class="timeline-line"></div>
             <div id="day-${dayIndex}" class="day-activities"></div>
           </div>
@@ -417,7 +417,7 @@
           
           actDiv.innerHTML = `
             <div class="timeline-dot"></div>
-            <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 ml-4 group-hover:border-green-200 transition">
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 group-hover:border-green-200 transition w-full">
               <div class="flex justify-between items-start">
                 <div>
                   <p class="text-xs font-heading text-stone-400 uppercase tracking-wide mb-1">${escapeHTML(activity.time || 'TBD')}</p>
@@ -462,7 +462,10 @@
         btn.addEventListener('click', (e) => {
           const dayIndex = parseInt(e.currentTarget.dataset.dayIndex);
           const actIndex = parseInt(e.currentTarget.dataset.activityIndex);
-          deleteActivity(dayIndex, actIndex);
+          // 加入確認視窗
+          if (confirm("確定要刪除這個行程嗎？此動作無法復原。")) {
+            deleteActivity(dayIndex, actIndex);
+          }
         });
       });
 
@@ -750,6 +753,9 @@ let currentActivityDayIndex = null;
 
     // 3. 修正 刪除行李項目 (Remove)
     window.removePackingItem = function(idx) {
+      // 加入確認視窗
+      if (!confirm("確定要刪除這件行李嗎？")) return;
+
       const trip = allTrips.find(t => t.__backendId === currentTripId);
       if (!trip) return;
 
