@@ -53,12 +53,17 @@
     .fade-up:nth-child(3) { animation-delay: 0.3s; }
     .fade-up:nth-child(4) { animation-delay: 0.4s; }
 
-    /* 防止 iPhone Safari 點擊輸入框時自動放大畫面 (強制字體最少 16px) */
+/* 防止 iPhone Safari 點擊輸入框時自動放大畫面 (強制字體最少 16px) */
     @media screen and (max-width: 768px) {
       input, textarea, select {
         font-size: 16px !important;
       }
     }
+
+    /* 🌟 新增：設定頁面控制嘅字體/全局縮放比例 */
+    html.text-scale-sm { font-size: 14px; }
+    html.text-scale-md { font-size: 16px; }
+    html.text-scale-lg { font-size: 18px; }
   </style>
  </head>
  
@@ -140,24 +145,7 @@
       <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-stone-50 to-transparent"></div>
      </header>
      
-     <div id="overview-tab" class="tab-content max-w-4xl mx-auto px-6 py-12">
-      <h3 class="font-heading font-700 text-2xl text-stone-800 mb-4 flex items-center gap-2">
-          <i data-lucide="compass" style="width: 24px; height: 24px;" class="text-green-500"></i> Trip Overview
-      </h3>
-      <p id="trip-overview-summary" class="font-body text-lg text-stone-600 leading-relaxed mb-8">Trip summary goes here...</p>
-      <div class="rounded-2xl overflow-hidden border-2 border-stone-200 bg-stone-100 aspect-video flex items-center justify-center relative">
-       <svg class="w-full h-full absolute inset-0" viewbox="0 0 600 300">
-        <rect fill="#e7e5e4" width="600" height="300" /> <path d="M0,200 C100,180 200,220 300,190 S500,210 600,195 L600,300 L0,300Z" fill="#d6d3d1" /> <circle cx="180" cy="130" r="6" fill="#22c55e" /><circle cx="320" cy="150" r="6" fill="#22c55e" /><circle cx="450" cy="120" r="6" fill="#22c55e" /> <path d="M180,130 Q250,160 320,150 Q385,140 450,120" stroke="#22c55e" stroke-width="2" fill="none" stroke-dasharray="6,4" /> 
-        <text x="180" y="115" font-size="11" fill="#78716c" text-anchor="middle" font-family="Outfit">Start</text> 
-        <text x="450" y="105" font-size="11" fill="#78716c" text-anchor="middle" font-family="Outfit">End</text>
-       </svg>
-       <div class="absolute bottom-3 right-3 bg-white/80 backdrop-blur rounded-lg px-3 py-1 text-xs font-heading text-stone-500">
-        Route Map Placeholder
-       </div>
-      </div>
-     </div>
-     
-     <div id="itinerary-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
+<div id="itinerary-tab" class="tab-content max-w-4xl mx-auto px-6 py-12">
       <div class="flex items-center justify-between mb-4">
        <h3 class="font-heading font-700 text-2xl text-stone-800 flex items-center gap-2">
            <i data-lucide="calendar" style="width: 24px; height: 24px;" class="text-green-500"></i> Daily Itinerary
@@ -220,12 +208,40 @@
       <div class="bg-white rounded-xl p-6 shadow-sm border border-stone-100">
        <div id="packing-list" class="space-y-3 mb-6">
        </div>
-       <div class="flex gap-2">
+<div class="flex gap-2">
            <input type="text" id="new-packing-input" placeholder="Add new item..." class="flex-1 px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200"> 
            <button id="add-packing-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg font-heading text-sm font-600 hover:bg-green-600 transition">Add</button>
        </div>
       </div>
      </div>
+     
+     <div id="settings-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
+      <h3 class="font-heading font-700 text-2xl text-stone-800 mb-6 flex items-center gap-2">
+          <i data-lucide="settings" style="width: 24px; height: 24px;" class="text-green-500"></i> Settings
+      </h3>
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-stone-100 space-y-6">
+        <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">預設開啟行程 (Default Trip)</label>
+          <select id="setting-default-trip" class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg font-body text-stone-600 focus:outline-none focus:ring-2 focus:ring-green-200">
+            <option value="recent">自動開啟最近期行程</option>
+            </select>
+        </div>
+        <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">全局字體大小 (App Scale)</label>
+          <select id="setting-font-size" class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg font-body text-stone-600 focus:outline-none focus:ring-2 focus:ring-green-200">
+            <option value="text-scale-sm">細 (Small)</option>
+            <option value="text-scale-md" selected>中 (Medium - 預設)</option>
+            <option value="text-scale-lg">大 (Large)</option>
+          </select>
+        </div>
+        <div class="pt-4 border-t border-stone-100">
+          <button id="logout-btn" class="w-full px-4 py-3 bg-red-50 text-red-600 rounded-lg font-heading font-600 hover:bg-red-100 transition flex items-center justify-center gap-2">
+            <i data-lucide="log-out" style="width: 18px; height: 18px;"></i> 登出帳號 (Logout)
+          </button>
+        </div>
+      </div>
+     </div>
+
     </div>
     
     <div id="empty-state" class="flex items-center justify-center h-full">
@@ -238,10 +254,10 @@
    </div>
    
    <nav class="bg-white border-t border-stone-200 px-6 py-3 flex justify-center gap-2">
-       <button id="tab-overview" class="nav-tab active px-4 py-2 rounded-lg font-heading text-xs font-600 text-green-600 bg-green-50">Overview</button> 
-       <button id="tab-itinerary" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Itinerary</button> 
+       <button id="tab-itinerary" class="nav-tab active px-4 py-2 rounded-lg font-heading text-xs font-600 text-green-600 bg-green-50">Itinerary</button> 
        <button id="tab-notes" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Notes</button> 
        <button id="tab-packing" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Packing</button>
+       <button id="tab-settings" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Setting</button>
    </nav>
   </div>
 
@@ -279,15 +295,31 @@
       }, 3000);
     }
 
-    const dataHandler = {
+const dataHandler = {
       onDataChanged(data) {
         allTrips = data || [];
         updateTripSelector();
+        updateSettingsTripSelector(); // 同步更新設定頁嘅下拉選單
+        
         if (currentTripId && allTrips.find(t => t.__backendId === currentTripId)) {
           displayTrip(currentTripId);
         } else if (allTrips.length > 0) {
-          currentTripId = allTrips[0].__backendId;
-          displayTrip(currentTripId);
+          // 🌟 預設開啟邏輯：讀取設定，決定開邊個行程
+          const defaultPref = localStorage.getItem('travel_default_trip') || 'recent';
+          let targetId = null;
+          
+          if (defaultPref !== 'recent' && allTrips.find(t => t.__backendId === defaultPref)) {
+            targetId = defaultPref;
+          } else {
+            // 選擇「最近期」：根據 start_date 由新至舊排，揀最新嗰個
+            const sortedTrips = [...allTrips].sort((a, b) => {
+              const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
+              const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
+              return dateB - dateA; 
+            });
+            targetId = sortedTrips[0].__backendId;
+          }
+          displayTrip(targetId);
         }
       }
     };
@@ -431,10 +463,9 @@ async update(tripData) {
       document.getElementById('trip-detail-view').classList.remove('hidden');
       document.getElementById('empty-state').classList.add('hidden');
 
-      // Update hero (escaped for safety)
+ // Update hero (escaped for safety)
       document.getElementById('trip-hero-title').textContent = trip.title;
       document.getElementById('trip-hero-dates').textContent = `${formatDate(trip.start_date)} – ${formatDate(trip.end_date)}`;
-      document.getElementById('trip-overview-summary').textContent = trip.summary;
 
       // Update selector
       document.getElementById('trip-selector').value = tripId;
@@ -775,8 +806,50 @@ let currentActivityDayIndex = null;
 
 
 
+ // --- 🌟 Settings 邏輯 ---
+    // 1. 初始化及改變字體大小
+    const savedFontSize = localStorage.getItem('travel_font_size') || 'text-scale-md';
+    document.documentElement.className = savedFontSize; // 將 CSS 加落最底層 HTML
+    document.getElementById('setting-font-size').value = savedFontSize;
+
+    document.getElementById('setting-font-size').addEventListener('change', (e) => {
+      const newSize = e.target.value;
+      localStorage.setItem('travel_font_size', newSize);
+      document.documentElement.className = newSize; // 實時改變整個 APP 比例
+    });
+
+    // 2. 預設開啟行程設定
+    function updateSettingsTripSelector() {
+      const selector = document.getElementById('setting-default-trip');
+      const savedPref = localStorage.getItem('travel_default_trip') || 'recent';
+      
+      selector.innerHTML = '<option value="recent">自動開啟最近期行程</option>';
+      allTrips.forEach(trip => {
+        const option = document.createElement('option');
+        option.value = trip.__backendId;
+        option.textContent = trip.title;
+        selector.appendChild(option);
+      });
+      selector.value = savedPref;
+    }
+
+    document.getElementById('setting-default-trip').addEventListener('change', (e) => {
+      localStorage.setItem('travel_default_trip', e.target.value);
+      showToast('已更新預設行程！');
+    });
+
+    // 3. 登出功能
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      if (confirm('確定要登出並鎖上行程表嗎？')) {
+        localStorage.removeItem('travel_token');
+        localStorage.removeItem('travel_auth');
+        window.location.reload(); // 重新載入，立刻觸發密碼鎖
+      }
+    });
+
     // Tab Navigation Logic (底部導航列專用)
     document.querySelectorAll('.nav-tab').forEach(btn => {
+     
       btn.addEventListener('click', function() {
         const tabName = this.id.replace('tab-', '');
         
