@@ -247,45 +247,9 @@
 
   <div id="toast-container" class="fixed bottom-20 right-4 z-50 flex flex-col gap-2"></div>
 
-  <script>
+ <script>
     let currentTripId = null;
     let allTrips = [];
-    
-    // 🔒 密碼保護邏輯 (SHA-256 單向加密雜湊)
-    const EXPECTED_HASH = "e0f02bb13c5c4a3c07cd168028193e27a40f7c95dbc64ba4d56d0945ea51422d";
-
-    async function hashPassword(password) {
-      const msgBuffer = new TextEncoder().encode(password);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    const loginOverlay = document.getElementById('login-overlay');
-    const loginForm = document.getElementById('login-form');
-    const loginError = document.getElementById('login-error');
-
-    // 檢查係咪已經登入過 (改用 localStorage，令部手機永遠記得你)
-    if (localStorage.getItem('travel_auth') === 'true') {
-      loginOverlay.classList.add('hidden');
-    }
-
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const pwd = document.getElementById('login-password').value;
-      const hash = await hashPassword(pwd);
-      
-      if (hash === EXPECTED_HASH) {
-        localStorage.setItem('travel_auth', 'true'); // 永久記錄登入狀態
-        loginOverlay.classList.add('hidden');
-        loginError.classList.add('hidden');
-      } else {
-        loginError.classList.remove('hidden');
-        document.getElementById('login-password').value = ''; // 清空錯誤密碼
-      }
-    });
-    
-    lucide.createIcons();
 
     // Utility: XSS Escaping Helper
     function escapeHTML(str) {
@@ -308,10 +272,7 @@
       container.appendChild(toast);
       lucide.createIcons();
 
-      // Animate in
       setTimeout(() => toast.classList.remove('translate-y-10', 'opacity-0'), 10);
-      
-      // Animate out and remove
       setTimeout(() => {
         toast.classList.add('opacity-0');
         setTimeout(() => toast.remove(), 300);
@@ -331,38 +292,45 @@
       }
     };
 
-    // --- 替換為連接 Google Sheet 嘅自訂 SDK ---
-    
-    // ⚠️ 請將下面呢條 URL 換成你喺 Apps Script 部署後得到嘅「Web App URL」
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyVFriu7BI1HD2c3ZkOooO2DRSCiDU8E7y3GlWqHTTFFnS7evvogSx-wwSO5SsrtDdozA/exec";
 
+    // --- 🛡️ 全新升級：帶鎖匙 (Token) 嘅 SDK ---
     const customDataSdk = {
-      // 1. 讀取資料 (GET)
       async init(handler) {
         try {
-          showToast('正在同步 Google Sheet 資料...', 'success');
+          const token = localStorage.getItem('travel_token');
+          if (!token) return { isOk: false }; // 無密碼就唔好浪費力氣敲門
+
+          showToast('正在驗證及同步資料...', 'success');
           
-          const response = await fetch(GAS_API_URL);
+          // 帶埋 Token 請求 Google Sheet
+          const response = await fetch(`${GAS_API_URL}?token=${token}`);
           const data = await response.json();
           
-          // 將 Google Sheet 拎到嘅資料交畀 App 更新畫面
+          // 如果伺服器話密碼錯
+          if (data.error === "Unauthorized") {
+            return { isOk: false, isAuthError: true }; 
+          }
+
           handler.onDataChanged(data);
           showToast('資料同步成功！', 'success');
           return { isOk: true };
         } catch (error) {
           console.error("讀取失敗:", error);
-          showToast('無法連接 Google Sheet，請檢查 URL', 'error');
+          showToast('無法連接 Google Sheet，請檢查網絡', 'error');
           return { isOk: false };
         }
       },
       
-      // 2. 更新資料 (POST)
       async update(tripData) {
         try {
           showToast('正在儲存至 Google Sheet...', 'success');
+          const token = localStorage.getItem('travel_token');
+          
           const response = await fetch(GAS_API_URL, {
             method: 'POST',
-            body: JSON.stringify(tripData)
+            // 儲存資料嗰陣，同時將 Token 塞入去送畀伺服器驗證
+            body: JSON.stringify({ ...tripData, token }) 
           });
           
           const result = await response.json();
@@ -370,7 +338,7 @@
             return { isOk: true };
           } else {
             console.error("Sheet 錯誤:", result.message);
-            showToast('儲存失敗', 'error');
+            showToast('儲存失敗 (可能登入已過期)', 'error');
             return { isOk: false };
           }
         } catch (error) {
@@ -380,22 +348,59 @@
         }
       },
 
-      // 3. 建立新 Trip (POST - Apps Script 會幫你開新 Tab)
       async create(tripData) {
         return this.update(tripData); 
       }
     };
 
-    // 初始化我哋嘅 Custom SDK
-    (async () => {
-      // 攔截並覆寫系統原本嘅 SDK
+    // 🔒 密碼保護邏輯 (前端已經無晒 Hash 紀錄)
+    async function hashPassword(password) {
+      const msgBuffer = new TextEncoder().encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    const loginOverlay = document.getElementById('login-overlay');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+
+    // 初始化 APP 流程 (負責決定開門定鎖門)
+    async function initApp() {
       window.dataSdk = customDataSdk; 
       const initResult = await window.dataSdk.init(dataHandler);
-      if (!initResult.isOk) {
-        console.error('無法連接到 Google Sheets 後台');
+      
+      if (initResult.isOk) {
+        // 後端驗證成功，解鎖畫面！
+        loginOverlay.classList.add('hidden');
+        loginError.classList.add('hidden');
+      } else {
+        // 驗證失敗 / 無 Token
+        if (initResult.isAuthError) {
+          loginError.classList.remove('hidden');
+          localStorage.removeItem('travel_token'); // 密碼錯，沒收本機鎖匙
+        }
+        loginOverlay.classList.remove('hidden');
       }
-    })();
-    // --- 替換完畢 ---
+      lucide.createIcons();
+    }
+
+    // 網頁一打開，即刻試吓用舊鎖匙開門
+    initApp();
+
+    // 提交密碼表單
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pwd = document.getElementById('login-password').value;
+      const hash = await hashPassword(pwd);
+      
+      // 先將鎖匙暫存喺瀏覽器
+      localStorage.setItem('travel_token', hash);
+      document.getElementById('login-password').value = ''; 
+      
+      // 叫系統重新驗證一次，如果啱就會自動摺埋登入畫面
+      await initApp(); 
+    });
 
     function updateTripSelector() {
       const selector = document.getElementById('trip-selector');
