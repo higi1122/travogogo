@@ -87,7 +87,7 @@
   <div id="app" class="w-full h-full flex flex-col bg-stone-50">
       
    <div class="bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between">
-    <h1 id="app-title" class="font-heading font-700 text-xl text-stone-800">My Travel Planner</h1>
+    <h1 id="app-title" class="font-heading font-700 text-xl text-stone-800">Travogogo</h1>
     <div class="flex items-center gap-3">
         <select id="trip-selector" class="px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg font-heading text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-green-200"> 
             <option value="">Select a trip...</option> 
@@ -326,66 +326,82 @@ const dataHandler = {
 
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyVFriu7BI1HD2c3ZkOooO2DRSCiDU8E7y3GlWqHTTFFnS7evvogSx-wwSO5SsrtDdozA/exec";
 
-    // --- 🛡️ 全新升級：帶鎖匙 (Token) 嘅 SDK ---
+  // --- 🛡️ 全新升級：帶鎖匙 (Token) + 離線暫存 (Cache-first) 嘅 SDK ---
     const customDataSdk = {
       async init(handler) {
         try {
           const token = localStorage.getItem('travel_token');
-          if (!token) return { isOk: false }; // 無密碼就唔好浪費力氣敲門
+          if (!token) return { isOk: false }; 
 
-          showToast('正在驗證及同步資料...', 'success');
+          // 🌟 1. 秒速讀取本地暫存 (Cache)
+          const cachedDataStr = localStorage.getItem('travel_cached_data');
+          if (cachedDataStr) {
+            try {
+              handler.onDataChanged(JSON.parse(cachedDataStr));
+            } catch(e) {}
+          } else {
+            // 如果係第一次用，完全無暫存，先彈「正在同步...」
+            showToast('首次載入，正在同步 Google Sheet...', 'success');
+          }
           
-          // 帶埋 Token 請求 Google Sheet
+          // 🌟 2. 背景靜悄悄去 Google Sheet 攞最新資料
           const response = await fetch(`${GAS_API_URL}?token=${token}`);
           const data = await response.json();
           
-          // 如果伺服器話密碼錯
           if (data.error === "Unauthorized") {
             return { isOk: false, isAuthError: true }; 
           }
 
+          // 🌟 3. 將最新資料 Save 落暫存，然後再次更新畫面
+          localStorage.setItem('travel_cached_data', JSON.stringify(data));
           handler.onDataChanged(data);
-          showToast('資料同步成功！', 'success');
+          
+          if (cachedDataStr) {
+            // 如果原本已經有舊資料睇緊，靜靜地彈句「已更新」就得
+            showToast('雲端同步完成，已取得最新資料！', 'success');
+          } else {
+            showToast('資料同步成功！', 'success');
+          }
+          
           return { isOk: true };
         } catch (error) {
           console.error("讀取失敗:", error);
+          // 🌟 4. 如果斷網/Server死咗，但有暫存，都當佢成功，畀用家繼續睇舊資料！
+          if (localStorage.getItem('travel_cached_data')) {
+            showToast('目前離線，正在顯示本地暫存資料', 'error');
+            return { isOk: true }; 
+          }
           showToast('無法連接 Google Sheet，請檢查網絡', 'error');
           return { isOk: false };
         }
       },
       
-async update(tripData) {
+      async update(tripData) {
         try {
           showToast('正在儲存至 Google Sheet...', 'success');
           const token = localStorage.getItem('travel_token');
           
           const response = await fetch(GAS_API_URL, {
             method: 'POST',
-            redirect: 'follow', // 🌟 必須加返呢行，跟隨 Google 嘅轉址！
-            headers: {
-              'Content-Type': 'text/plain;charset=utf-8', // 🌟 必須加返呢行，避開 Google 嘅安全攔截！
-            },
             body: JSON.stringify({ ...tripData, token }) 
           });
           
           const result = await response.json();
           if (result.status === 'success') {
+            // 🌟 5. 儲存成功後，順便將最新嘅 allTrips 更新落本地暫存，確保資料一致
+            localStorage.setItem('travel_cached_data', JSON.stringify(allTrips));
             return { isOk: true };
           } else {
-            console.error("Sheet 錯誤:", result.message);
             showToast('儲存失敗 (可能登入已過期)', 'error');
             return { isOk: false };
           }
         } catch (error) {
-          console.error("更新失敗:", error);
           showToast('儲存失敗，請檢查網絡', 'error');
           return { isOk: false };
         }
       },
 
-      async create(tripData) {
-        return this.update(tripData); 
-      }
+      async create(tripData) { return this.update(tripData); }
     };
 
     // 🔒 密碼保護邏輯 (前端已經無晒 Hash 紀錄)
@@ -838,11 +854,12 @@ let currentActivityDayIndex = null;
       showToast('已更新預設行程！');
     });
 
-    // 3. 登出功能
+// 3. 登出功能
     document.getElementById('logout-btn').addEventListener('click', () => {
       if (confirm('確定要登出並鎖上行程表嗎？')) {
         localStorage.removeItem('travel_token');
         localStorage.removeItem('travel_auth');
+        localStorage.removeItem('travel_cached_data'); // 🌟 保安升級：清空埋本地離線暫存
         window.location.reload(); // 重新載入，立刻觸發密碼鎖
       }
     });
