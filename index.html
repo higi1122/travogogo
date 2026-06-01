@@ -322,14 +322,17 @@
         }
       },
       
-      async update(tripData) {
+async update(tripData) {
         try {
           showToast('正在儲存至 Google Sheet...', 'success');
           const token = localStorage.getItem('travel_token');
           
           const response = await fetch(GAS_API_URL, {
             method: 'POST',
-            // 儲存資料嗰陣，同時將 Token 塞入去送畀伺服器驗證
+            redirect: 'follow', // 🌟 必須加返呢行，跟隨 Google 嘅轉址！
+            headers: {
+              'Content-Type': 'text/plain;charset=utf-8', // 🌟 必須加返呢行，避開 Google 嘅安全攔截！
+            },
             body: JSON.stringify({ ...tripData, token }) 
           });
           
