@@ -571,13 +571,17 @@ itineraries.forEach((day, dayIndex) => {
           // 🌟 加入 cursor-grab 提示用家可以拖拉
           actDiv.className = 'relative mb-6 group cursor-grab active:cursor-grabbing';
           
-       // 🗺️ 支援新嘅 Address 欄位，如果無就用 Location。順便換咗保證唔會壞嘅原生 Google Maps 網址。
+// 🗺️ 支援新嘅 Address 欄位，如果無就用 Location。順便換咗保證唔會壞嘅原生 Google Maps 網址。
           const targetAddress = activity.address ? activity.address : activity.location;
           const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetAddress || '')}`;
-          const mapButtonHTML = activity.showMap !== false
-           ? `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 ${themeBgLight} ${themeText} rounded-lg text-xs font-heading font-500 ${themeHoverBg} transition">📍 Open in Google Maps</a>`
+          const mapButtonHTML = activity.showMap !== false 
+            // 🌟 將文字換成 targetAddress，並加入 truncate 防止長地址撐爆排版
+            ? `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 ${themeBgLight} ${themeText} rounded-lg text-xs font-heading font-500 ${themeHoverBg} transition max-w-[200px] sm:max-w-[300px]" title="${escapeHTML(targetAddress)}">
+                 <span class="shrink-0">📍</span> 
+                 <span class="truncate">${escapeHTML(targetAddress || '打開地圖')}</span>
+               </a>`
             : `<div></div>`;
-          
+         
           actDiv.innerHTML = `
             <div class="timeline-dot ${themeDotBg} ${themeDotShadow}"></div>
             <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 ${themeBorderHover} transition w-full">
