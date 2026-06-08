@@ -86,10 +86,16 @@
 
   <div id="app" class="w-full h-full flex flex-col bg-stone-50">
       
-   <div class="bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between">
-    <h1 id="app-title" class="font-heading font-700 text-xl text-stone-800">Travogogo</h1>
+<div class="bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between z-40 relative">
+    <div class="flex items-center gap-2">
+      <button id="home-btn" class="p-2 hover:bg-stone-100 rounded-lg transition text-stone-600" title="回到首頁">
+        <i data-lucide="home" style="width: 20px; height: 20px;"></i>
+      </button>
+      <h1 id="app-title" class="font-heading font-700 text-xl text-stone-800 hidden sm:block">My Travel Planner</h1>
+    </div>
     <div class="flex items-center gap-3">
-        <select id="trip-selector" class="px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg font-heading text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-green-200"> 
+     
+     <select id="trip-selector" class="px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg font-heading text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-green-200"> 
             <option value="">Select a trip...</option> 
         </select> 
         <button id="new-trip-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg font-heading text-sm font-600 hover:bg-green-600 transition flex items-center gap-2"> 
@@ -98,9 +104,16 @@
     </div>
    </div>
    
-   <div id="main-content" class="flex-1 overflow-auto">
+<div id="main-content" class="flex-1 overflow-auto">
        
+    <div id="home-view" class="hidden p-6 max-w-5xl mx-auto">
+      <h2 class="font-heading font-700 text-3xl text-stone-800 mb-8">My Trips</h2>
+      <div id="trip-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        </div>
+    </div>
+
     <div id="trip-creation-view" class="hidden p-6">
+     
      <div class="max-w-2xl mx-auto">
       <h2 class="font-heading font-700 text-2xl text-stone-800 mb-6">Create a New Trip</h2>
       <form id="trip-form" class="bg-white rounded-xl p-8 border border-stone-200 space-y-4">
@@ -256,9 +269,8 @@
     </div>
    </div>
    
-   <nav class="bg-white border-t border-stone-200 px-6 py-3 flex justify-center gap-2">
-       <button id="tab-itinerary" class="nav-tab active px-4 py-2 rounded-lg font-heading text-xs font-600 text-green-600 bg-green-50">Itinerary</button> 
-       <button id="tab-notes" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Notes</button> 
+<nav id="bottom-nav" class="bg-white border-t border-stone-200 px-6 py-3 flex justify-center gap-2 hidden z-40 relative">
+       <button id="tab-itinerary" class="nav-tab active px-4 py-2 rounded-lg font-heading text-xs font-600 text-green-600 bg-green-50">Itinerary</button>       <button id="tab-notes" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Notes</button> 
        <button id="tab-packing" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Packing</button>
        <button id="tab-settings" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Setting</button>
    </nav>
@@ -302,31 +314,84 @@ const dataHandler = {
       onDataChanged(data) {
         allTrips = data || [];
         updateTripSelector();
-        updateSettingsTripSelector(); // 同步更新設定頁嘅下拉選單
+        updateSettingsTripSelector(); 
         
+        if (allTrips.length === 0) {
+          document.getElementById('empty-state').classList.remove('hidden');
+          return;
+        }
+
+        // 🌟 升級版預設開啟邏輯：讀取設定 (預設開啟首頁)
+        const defaultPref = localStorage.getItem('travel_default_trip') || 'home';
+        
+        // 如果用家喺行程入面 Refresh，盡量留返喺嗰個行程
         if (currentTripId && allTrips.find(t => t.__backendId === currentTripId)) {
           displayTrip(currentTripId);
-        } else if (allTrips.length > 0) {
-          // 🌟 預設開啟邏輯：讀取設定，決定開邊個行程
-          const defaultPref = localStorage.getItem('travel_default_trip') || 'recent';
-          let targetId = null;
-          
-          if (defaultPref !== 'recent' && allTrips.find(t => t.__backendId === defaultPref)) {
-            targetId = defaultPref;
-          } else {
-            // 選擇「最近期」：根據 start_date 由新至舊排，揀最新嗰個
-            const sortedTrips = [...allTrips].sort((a, b) => {
-              const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
-              const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
-              return dateB - dateA; 
-            });
-            targetId = sortedTrips[0].__backendId;
-          }
-          displayTrip(targetId);
+        } else if (defaultPref === 'home') {
+          showHomeView();
+        } else if (defaultPref === 'recent') {
+          const sortedTrips = [...allTrips].sort((a, b) => {
+            const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
+            const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
+            return dateB - dateA; 
+          });
+          displayTrip(sortedTrips[0].__backendId);
+        } else if (allTrips.find(t => t.__backendId === defaultPref)) {
+          displayTrip(defaultPref);
+        } else {
+          showHomeView();
         }
       }
     };
 
+    // 🌟 顯示首頁視圖
+    function showHomeView() {
+      currentTripId = null;
+      document.getElementById('trip-detail-view').classList.add('hidden');
+      document.getElementById('trip-creation-view').classList.add('hidden');
+      document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('bottom-nav').classList.add('hidden'); // 隱藏底部導航列
+      document.getElementById('home-view').classList.remove('hidden');
+      document.getElementById('trip-selector').value = '';
+      renderHomeView();
+    }
+
+    // 🌟 渲染首頁卡片
+    function renderHomeView() {
+      const container = document.getElementById('trip-cards-container');
+      container.innerHTML = '';
+
+      // 根據出發日期由新至舊排序
+      const sortedTrips = [...allTrips].sort((a, b) => {
+        const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
+        const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
+        return dateB - dateA; 
+      });
+
+      sortedTrips.forEach((trip, idx) => {
+        const card = document.createElement('div');
+        card.className = `fade-up bg-white rounded-2xl p-6 shadow-sm border border-stone-100 hover:border-green-300 hover:shadow-md transition cursor-pointer group flex flex-col h-full`;
+        card.style.animationDelay = `${idx * 0.1}s`;
+        card.onclick = () => displayTrip(trip.__backendId);
+        
+        const dateStr = trip.start_date ? `${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}` : '未設定日期';
+        
+        card.innerHTML = `
+          <div class="mb-4">
+            <h3 class="font-heading font-700 text-xl text-stone-800 group-hover:text-green-600 transition line-clamp-2">${escapeHTML(trip.title)}</h3>
+            <p class="font-heading text-sm text-stone-400 mt-2 flex items-center gap-1">
+              <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> ${escapeHTML(dateStr)}
+            </p>
+          </div>
+          <p class="font-body text-sm text-stone-500 line-clamp-3 flex-1 mb-4">${escapeHTML(trip.summary || '沒有行程簡介...')}</p>
+          <div class="mt-auto pt-4 border-t border-stone-50 flex items-center text-green-500 font-heading text-sm font-600 opacity-0 group-hover:opacity-100 transition transform translate-x-[-10px] group-hover:translate-x-0">
+            開啟行程 <i data-lucide="arrow-right" style="width: 16px; height: 16px;" class="ml-1"></i>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyVFriu7BI1HD2c3ZkOooO2DRSCiDU8E7y3GlWqHTTFFnS7evvogSx-wwSO5SsrtDdozA/exec";
 
   // --- 🛡️ 全新升級：帶鎖匙 (Token) + 離線暫存 (Cache-first) 嘅 SDK ---
@@ -477,12 +542,14 @@ const dataHandler = {
       const trip = allTrips.find(t => t.__backendId === tripId);
       if (!trip) return;
 
-      currentTripId = tripId;
+ currentTripId = tripId;
+      document.getElementById('home-view').classList.add('hidden'); // 🌟 隱藏首頁
       document.getElementById('trip-creation-view').classList.add('hidden');
       document.getElementById('trip-detail-view').classList.remove('hidden');
       document.getElementById('empty-state').classList.add('hidden');
-
- // Update hero (escaped for safety)
+      document.getElementById('bottom-nav').classList.remove('hidden'); // 🌟 顯示底部導航列
+     
+     // Update hero (escaped for safety)
       document.getElementById('trip-hero-title').textContent = trip.title;
       document.getElementById('trip-hero-dates').textContent = `${formatDate(trip.start_date)} – ${formatDate(trip.end_date)}`;
 
@@ -866,7 +933,7 @@ const mapToggle = document.getElementById('activity-show-map');
       const selector = document.getElementById('setting-default-trip');
       const savedPref = localStorage.getItem('travel_default_trip') || 'recent';
       
-      selector.innerHTML = '<option value="recent">自動開啟最近期行程</option>';
+selector.innerHTML = '<option value="home">顯示首頁大廳 (Home)</option><option value="recent">自動開啟最近期行程</option>';
       allTrips.forEach(trip => {
         const option = document.createElement('option');
         option.value = trip.__backendId;
@@ -890,7 +957,9 @@ const mapToggle = document.getElementById('activity-show-map');
         window.location.reload(); // 重新載入，立刻觸發密碼鎖
       }
     });
-
+  
+document.getElementById('home-btn').addEventListener('click', showHomeView);
+  
     // Tab Navigation Logic (底部導航列專用)
     document.querySelectorAll('.nav-tab').forEach(btn => {
      
