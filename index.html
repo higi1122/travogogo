@@ -747,13 +747,15 @@ let currentActivityDayIndex = null;
       const locationInput = document.getElementById('activity-location');
       const location = locationInput.value.trim();
       
-      const addressInput = document.getElementById('activity-address').value.trim(); // 🌟 新增
-      const address = addressInput || location; // 🌟 核心邏輯：如果無打地址，就自動用 Location 代替
-      
-      const description = document.getElementById('activity-description').value.trim();
-      const mapToggle = document.getElementById('activity-show-map');
+const mapToggle = document.getElementById('activity-show-map');
       const showMap = mapToggle ? mapToggle.checked : true;
 
+      const addressInput = document.getElementById('activity-address').value.trim();
+      // 🌟 核心邏輯升級：如果剔咗顯示地圖，而又無打地址，先用 Location 頂上；否則直接留空！
+      const address = showMap ? (addressInput || location) : addressInput;
+      
+      const description = document.getElementById('activity-description').value.trim();
+     
       if (!location) {
         locationInput.classList.add('ring-red-500', 'border-red-500');
         showToast('Location is required!', 'error');
