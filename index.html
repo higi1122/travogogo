@@ -143,9 +143,12 @@
      </div>
     </div>
     
-    <div id="trip-detail-view" class="hidden">
+<div id="trip-detail-view" class="hidden">
         
-<header class="relative w-full h-[20%] min-h-[160px] overflow-hidden">
+     <header class="relative w-full h-[20%] min-h-[160px] overflow-hidden">
+      <button id="edit-trip-btn" class="absolute top-4 right-4 z-20 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur transition" title="編輯行程資料">
+        <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
+      </button>
       <div class="absolute inset-0 bg-gradient-to-br from-green-900 via-yellow-800 to-stone-900"></div>
       <svg class="absolute inset-0 w-full h-full opacity-10" viewbox="0 0 800 400" preserveaspectratio="xMidYMid slice">
        <path d="M0,300 Q200,200 400,280 T800,250 L800,400 L0,400 Z" fill="#fff" /> <circle cx="650" cy="80" r="40" fill="#fff" opacity="0.3" /> <path d="M100,350 L130,280 L160,350 Z" fill="#fff" opacity="0.2" /> <path d="M140,350 L180,260 L220,350 Z" fill="#fff" opacity="0.15" />
@@ -199,13 +202,39 @@
           <label for="activity-show-map" class="font-body text-stone-600 text-sm cursor-pointer">顯示 Google Maps 按鈕</label>
          </div>
         </div>
-        <div class="flex gap-3 mt-6">
+<div class="flex gap-3 mt-6">
          <button id="save-activity-btn" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-heading font-600 hover:bg-green-600 transition">Save Activity</button> 
          <button id="close-activity-modal-btn" class="flex-1 px-4 py-2 bg-stone-200 text-stone-700 rounded-lg font-heading font-600 hover:bg-stone-300 transition">Cancel</button>
         </div>
        </div>
       </div>
-     </div>
+
+      <div id="edit-trip-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+       <div class="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-auto">
+        <h4 class="font-heading font-700 text-lg text-stone-800 mb-4">Edit Trip Details</h4>
+        <div class="space-y-4">
+         <div class="grid md:grid-cols-2 gap-4">
+          <div>
+           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Start Date</label> 
+           <input type="date" id="edit-trip-start" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200" required>
+          </div>
+          <div>
+           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">End Date</label> 
+           <input type="date" id="edit-trip-end" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200" required>
+          </div>
+         </div>
+         <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Trip Summary</label> 
+          <textarea id="edit-trip-summary" placeholder="Brief description of your trip..." class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-green-200"></textarea>
+         </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+         <button id="save-edit-trip-btn" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-heading font-600 hover:bg-green-600 transition">Save Changes</button> 
+         <button id="close-edit-trip-btn" class="flex-1 px-4 py-2 bg-stone-200 text-stone-700 rounded-lg font-heading font-600 hover:bg-stone-300 transition">Cancel</button>
+        </div>
+       </div>
+      </div>
+      </div>
      
      <div id="notes-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
       <h3 class="font-heading font-700 text-2xl text-stone-800 mb-6 flex items-center gap-2">
@@ -859,7 +888,7 @@ const mapToggle = document.getElementById('activity-show-map');
         itineraries: newItinerariesStr
       });
 
-      if (result.isOk) {
+if (result.isOk) {
         document.getElementById('activity-modal').classList.add('hidden');
         renderItineraries(itineraries);
         showToast(currentActivityEditIndex !== null ? 'Activity updated!' : 'Activity added!');
@@ -868,8 +897,65 @@ const mapToggle = document.getElementById('activity-show-map');
       }
     });
 
-    function deleteActivity(dayIndex, actIndex) {
+    // --- 🌟 新增：Edit Trip 邏輯 ---
+    document.getElementById('edit-trip-btn').addEventListener('click', () => {
       const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      // 將 Google Sheet 日期轉回 YYYY-MM-DD 畀 HTML Input 用
+      const formatDateForInput = (dateStr) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '';
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+
+      document.getElementById('edit-trip-start').value = formatDateForInput(trip.start_date);
+      document.getElementById('edit-trip-end').value = formatDateForInput(trip.end_date);
+      document.getElementById('edit-trip-summary').value = trip.summary || '';
+      
+      document.getElementById('edit-trip-modal').classList.remove('hidden');
+    });
+
+    document.getElementById('close-edit-trip-btn').addEventListener('click', () => {
+      document.getElementById('edit-trip-modal').classList.add('hidden');
+    });
+
+    // 點擊空白處關閉視窗
+    document.getElementById('edit-trip-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'edit-trip-modal') {
+        document.getElementById('edit-trip-modal').classList.add('hidden');
+      }
+    });
+
+    document.getElementById('save-edit-trip-btn').addEventListener('click', async () => {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      trip.start_date = document.getElementById('edit-trip-start').value;
+      trip.end_date = document.getElementById('edit-trip-end').value;
+      trip.summary = document.getElementById('edit-trip-summary').value;
+
+      // 更新本地暫存並即時更新畫面
+      localStorage.setItem('travel_cached_data', JSON.stringify(allTrips));
+      document.getElementById('edit-trip-modal').classList.add('hidden');
+      displayTrip(currentTripId); 
+
+      // 同步去 Google Sheet
+      const result = await window.dataSdk.update(trip);
+      if (result.isOk) {
+        showToast('Trip details updated!');
+        if (typeof renderHomeView === 'function') renderHomeView(); // 順便更新埋首頁卡片嘅日期
+      }
+    });
+    // --- 結束 Edit Trip 邏輯 ---
+
+    function deleteActivity(dayIndex, actIndex) {
+     
+     const trip = allTrips.find(t => t.__backendId === currentTripId);
       if (!trip) return;
 
       const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
