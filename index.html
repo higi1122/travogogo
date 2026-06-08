@@ -732,10 +732,20 @@ let currentActivityDayIndex = null;
       document.getElementById('activity-modal').classList.remove('hidden');
     }
 
-    document.getElementById('close-activity-modal-btn').addEventListener('click', () => {
+ document.getElementById('close-activity-modal-btn').addEventListener('click', () => {
       document.getElementById('activity-modal').classList.add('hidden');
       currentActivityDayIndex = null;
       currentActivityEditIndex = null;
+    });
+
+    // 🌟 新增：點擊黑色半透明背景 (空白處) 自動關閉視窗
+    document.getElementById('activity-modal').addEventListener('click', (e) => {
+      // 確保只係撳中背景，而唔係撳中入面個白色視窗
+      if (e.target.id === 'activity-modal') {
+        document.getElementById('activity-modal').classList.add('hidden');
+        currentActivityDayIndex = null;
+        currentActivityEditIndex = null;
+      }
     });
 
     // Save Activity logic with validation
