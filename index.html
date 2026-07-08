@@ -172,7 +172,7 @@
       </div>
       
       <!-- 🌟 新增：黏貼式快捷導航列 (Sticky Quick Nav) -->
-<div id="day-nav-container" class="sticky top-0 z-30 bg-white/95 backdrop-blur py-3 mb-8 -mx-6 px-6 border-b border-stone-100 flex gap-2 overflow-x-auto no-scrollbar" style="display: none;">
+<div id="day-nav-container" class="select-none sticky top-0 z-30 bg-white/95 backdrop-blur py-3 mb-8 -mx-6 px-6 border-b border-stone-100 flex gap-2 overflow-x-auto no-scrollbar" style="display: none;">
       </div>
 
       <div id="itinerary-container" class="space-y-8">
@@ -627,11 +627,36 @@ itineraries.forEach((day, dayIndex) => {
         const themeDotBg = isGreen ? 'bg-green-500' : 'bg-amber-600';
         const themeDotShadow = isGreen ? 'shadow-[0_0_0_3px_#dcfce7]' : 'shadow-[0_0_0_3px_#fef3c7]';
         
+        // 🌟 提前計算日期，等導航按鈕同標題都可以共用
+        let displayTitle = day.title || 'Day ' + dayNum;
+        let navTitle = 'Day ' + dayNum; // 預設導航字眼
+        
+        const currentTrip = allTrips.find(t => t.__backendId === currentTripId);
+        if (currentTrip && currentTrip.start_date) {
+          const d = new Date(currentTrip.start_date);
+          if (!isNaN(d.getTime())) {
+            d.setDate(d.getDate() + dayIndex); 
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            const dateShort = `${d.getDate()}/${d.getMonth() + 1} (${weekdays[d.getDay()]})`;
+            displayTitle = `Day ${dayNum} — ${dateShort}`;
+            navTitle = dateShort; // 🌟 導航列只顯示短日期，例如 30/7 (四)
+          }
+        } else if (day.title && day.title.includes(' — ')) {
+          const dateStr = day.title.split(' — ')[1];
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime())) {
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            const dateShort = `${d.getDate()}/${d.getMonth() + 1} (${weekdays[d.getDay()]})`;
+            displayTitle = `Day ${dayNum} — ${dateShort}`;
+            navTitle = dateShort; // 🌟 導航列只顯示短日期，例如 30/7 (四)
+          }
+        }
+
         // 🌟 自動生成 Day 按鈕並加入 Smooth Scroll
         if (navContainer) {
           const navBtn = document.createElement('button');
           navBtn.className = `whitespace-nowrap px-4 py-1.5 bg-stone-100 text-stone-600 ${themeHoverBtn} hover:text-white rounded-full font-heading text-sm font-600 transition`;
-          navBtn.textContent = `Day ${dayNum}`;
+          navBtn.textContent = navTitle; // 🌟 換成啱啱計好嘅短日期
           navBtn.onclick = () => {
             const target = document.getElementById(`day-section-${dayIndex}`);
             const scrollContainer = document.getElementById('main-content');
@@ -646,10 +671,10 @@ itineraries.forEach((day, dayIndex) => {
         const dayDiv = document.createElement('div');
         dayDiv.id = `day-section-${dayIndex}`; 
         dayDiv.className = 'mb-10';
-        
+
         dayDiv.innerHTML = `
           <div class="flex items-center justify-between mb-4 pl-8">
-            <h3 class="font-heading font-600 text-lg ${themeText}">${escapeHTML(day.title || 'Day ' + dayNum)}</h3>
+            <h3 class="font-heading font-600 text-lg ${themeText}">${escapeHTML(displayTitle)}</h3>
             <button class="add-activity-btn px-3 py-1 ${themeBgLight} ${themeText} rounded-lg text-xs font-heading font-600 ${themeHoverBg} transition flex items-center gap-1" data-day-index="${dayIndex}">
               <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Add Activity
             </button>
@@ -1241,7 +1266,48 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       }
     };
     
+// --- 🌟 新增：電腦版橫向滾動支援 (滑鼠拖拉 + 滾輪) ---
+    const dayNavContainer = document.getElementById('day-nav-container');
+    let isNavDragging = false;
+    let navStartX, navScrollLeft;
 
+    // 滑鼠移入時顯示「手仔」圖示
+    dayNavContainer.addEventListener('mouseenter', () => {
+      dayNavContainer.style.cursor = 'grab';
+    });
+
+    dayNavContainer.addEventListener('mousedown', (e) => {
+      isNavDragging = true;
+      dayNavContainer.style.cursor = 'grabbing'; // 㩒住變緊握手勢
+      navStartX = e.pageX - dayNavContainer.offsetLeft;
+      navScrollLeft = dayNavContainer.scrollLeft;
+    });
+
+    dayNavContainer.addEventListener('mouseleave', () => {
+      isNavDragging = false;
+      dayNavContainer.style.cursor = 'grab';
+    });
+
+    dayNavContainer.addEventListener('mouseup', () => {
+      isNavDragging = false;
+      dayNavContainer.style.cursor = 'grab';
+    });
+
+    dayNavContainer.addEventListener('mousemove', (e) => {
+      if (!isNavDragging) return;
+      e.preventDefault(); // 防止選取文字
+      const x = e.pageX - dayNavContainer.offsetLeft;
+      const walk = (x - navStartX) * 1.5; // 拖拉速度 (1.5倍速)
+      dayNavContainer.scrollLeft = navScrollLeft - walk;
+    });
+
+    // 支援滑鼠滾輪直接橫向碌 (上下滾輪變左右碌)
+    dayNavContainer.addEventListener('wheel', (e) => {
+      // 當指住個導航列碌滑鼠時，只會橫向郁，唔會成個網頁碌走
+      e.preventDefault();
+      dayNavContainer.scrollLeft += e.deltaY;
+    }, { passive: false });
+    // --- 結束橫向滾動支援 ---
     // Element SDK Initialization
     const defaultConfig = { app_title: 'Travogogo' };
 
