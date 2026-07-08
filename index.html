@@ -64,6 +64,64 @@
     html.text-scale-sm { font-size: 14px; }
     html.text-scale-md { font-size: 16px; }
     html.text-scale-lg { font-size: 18px; }
+
+    /* 🌟 iPhone Style Scrubber 樣式 */
+    .scrubber-track {
+      position: fixed;
+      right: 4px;
+      top: 160px; /* 避開頂部 Hero / Nav */
+      bottom: 80px; /* 避開底部 Tab */
+      width: 24px;
+      z-index: 50;
+      display: none; /* 預設隱藏，由 JS 決定顯示 */
+    }
+    
+    .scrubber-thumb {
+      position: absolute;
+      right: 2px;
+      width: 6px;
+      height: 40px;
+      background: rgba(168, 162, 158, 0.5); /* tailwind stone-400 */
+      border-radius: 99px;
+      transition: background 0.2s, width 0.2s, right 0.2s;
+      pointer-events: none; /* 將拖拉判定交畀 track */
+    }
+    
+    .scrubber-track:hover .scrubber-thumb {
+      background: rgba(120, 113, 108, 0.8); /* tailwind stone-500 */
+      width: 8px;
+      right: 1px;
+    }
+    
+    .scrubber-track.is-dragging .scrubber-thumb {
+      background: rgba(34, 197, 94, 0.9); /* tailwind green-500 */
+      width: 10px;
+      right: 0px;
+    }
+    
+    .scrubber-tooltip {
+      position: absolute;
+      right: 24px;
+      top: 0;
+      transform: translateY(-50%);
+      background: rgba(41, 37, 36, 0.9); /* tailwind stone-800 */
+      backdrop-filter: blur(4px);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      white-space: nowrap;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .scrubber-track.is-dragging .scrubber-tooltip {
+      opacity: 1; /* 拉緊嗰陣顯示泡泡 */
+    }
   </style>
  </head>
  
@@ -177,6 +235,14 @@
 
 
       <div id="itinerary-container" class="space-y-8">
+      </div>
+
+      <div id="scrubber-container" class="scrubber-track cursor-grab">
+        <div id="scrubber-tooltip" class="scrubber-tooltip">
+          <span id="scrubber-day-text" class="font-heading font-700 text-sm"></span>
+          <span id="scrubber-date-text" class="font-body text-xs text-stone-300"></span>
+        </div>
+        <div id="scrubber-thumb" class="scrubber-thumb"></div>
       </div>
       
       <div id="activity-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -858,11 +924,103 @@ if (result.isOk) {
         });
       }, observerOptions);
 
-      // 開始監聽每一日嘅區塊
+// 開始監聽每一日嘅區塊
       document.querySelectorAll('[id^="day-section-"]').forEach(section => {
         observer.observe(section);
       });
       // --- 結束 Scroll Spy 邏輯 ---
+
+      // --- 🌟 修正版：iPhone 圖庫式拉桿邏輯 (避免變數重複宣告衝突) ---
+      const scrubberScrollContainer = document.getElementById('main-content');
+      const scrubberTrack = document.getElementById('scrubber-container');
+      const scrubberThumb = document.getElementById('scrubber-thumb');
+      const scrubberTooltip = document.getElementById('scrubber-tooltip');
+      
+      // 只有多過 1 日先顯示拉桿
+      if (scrubberTrack) {
+        scrubberTrack.style.display = itineraries.length > 1 ? 'block' : 'none';
+      }
+
+      if (scrubberTrack && scrubberThumb && scrubberScrollContainer && !window.scrubberInitialized) {
+        window.scrubberInitialized = true; // ⚠️ 防呆：確保全局 Listener 只綁定一次
+        let isDraggingScrubber = false;
+
+        // A. 頁面滑動時，自動移動拉桿
+        const updateThumbPos = () => {
+          if (isDraggingScrubber) return;
+          const maxScroll = scrubberScrollContainer.scrollHeight - scrubberScrollContainer.clientHeight;
+          if (maxScroll <= 0) return;
+          const percent = scrubberScrollContainer.scrollTop / maxScroll;
+          const maxThumbY = scrubberTrack.clientHeight - scrubberThumb.clientHeight;
+          scrubberThumb.style.transform = `translateY(${percent * maxThumbY}px)`;
+        };
+        
+        scrubberScrollContainer.addEventListener('scroll', updateThumbPos);
+        setTimeout(updateThumbPos, 100); // 載入後初始化位置
+
+        // B. 手指/滑鼠拖拉拉桿時，急速捲動頁面
+        const handleDrag = (e) => {
+          e.preventDefault();
+          isDraggingScrubber = true;
+          scrubberTrack.classList.add('is-dragging'); // 觸發 Tooltip 顯示
+          scrubberTrack.style.cursor = 'grabbing';
+          
+          const trackRect = scrubberTrack.getBoundingClientRect();
+          let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          let y = clientY - trackRect.top;
+          
+          const thumbH = scrubberThumb.clientHeight;
+          const trackH = scrubberTrack.clientHeight;
+          let percent = (y - (thumbH / 2)) / (trackH - thumbH);
+          
+          // 限制範圍 0 - 1
+          percent = Math.max(0, Math.min(1, percent));
+          
+          const translateY = percent * (trackH - thumbH);
+          scrubberThumb.style.transform = `translateY(${translateY}px)`;
+          if(scrubberTooltip) scrubberTooltip.style.top = `${translateY + (thumbH / 2)}px`; // 令 Tooltip 跟住手指郁
+          
+          const maxScroll = scrubberScrollContainer.scrollHeight - scrubberScrollContainer.clientHeight;
+          scrubberScrollContainer.scrollTop = percent * maxScroll;
+        };
+
+        const stopDrag = () => { 
+          isDraggingScrubber = false; 
+          scrubberTrack.classList.remove('is-dragging');
+          scrubberTrack.style.cursor = 'grab';
+        };
+
+        scrubberTrack.addEventListener('mousedown', handleDrag);
+        scrubberTrack.addEventListener('touchstart', handleDrag, {passive: false});
+        document.addEventListener('mousemove', (e) => { if(isDraggingScrubber) handleDrag(e); });
+        document.addEventListener('touchmove', (e) => { if(isDraggingScrubber) handleDrag(e); }, {passive: false});
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchend', stopDrag);
+      }
+
+      // C. 靜靜雞更新懸浮泡泡內的「日期文字」(Intersection Observer)
+      // ⚠️ 由於每次 render 會重新生成 day-section，所以要清空舊嘅 observer
+      if (window.scrubberObserver) {
+        window.scrubberObserver.disconnect();
+      }
+      
+      const observerOptionsScrubber = { root: scrubberScrollContainer, rootMargin: '-100px 0px -50% 0px', threshold: 0 };
+      window.scrubberObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const currentDayIdx = entry.target.id.replace('day-section-', '');
+            const titleText = entry.target.querySelector('h3').textContent || '';
+            const parts = titleText.split(' — ');
+            const dayTextEl = document.getElementById('scrubber-day-text');
+            const dateTextEl = document.getElementById('scrubber-date-text');
+            if(dayTextEl) dayTextEl.textContent = parts[0] || `Day ${parseInt(currentDayIdx)+1}`;
+            if(dateTextEl) dateTextEl.textContent = parts[1] || '';
+          }
+        });
+      }, observerOptionsScrubber);
+
+      document.querySelectorAll('[id^="day-section-"]').forEach(section => window.scrubberObserver.observe(section));
+      // --- 結束 iPhone 拉桿邏輯 ---
 
     }
 
