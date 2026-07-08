@@ -36,9 +36,9 @@
   <style>
     html, body { height: 100%; margin: 0; box-sizing: border-box; }
     
-    /* Timeline Styles */
-    .timeline-line { position: absolute; left: 12px; top: 0; bottom: 0; width: 2px; }
-    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; position: absolute; left: -25px; top: 1.5rem; z-index: 10; }
+    /* Timeline Styles (使用 transform 強制完美置中) */
+    .timeline-line { position: absolute; left: 16px; transform: translateX(-50%); top: 0; bottom: 0; width: 2px; }
+    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; position: absolute; left: -16px; transform: translateX(-50%); top: 1.5rem; z-index: 10; }
     
     /* Utility Classes */
     .check-item input:checked + span { text-decoration: line-through; opacity: 0.5; }
