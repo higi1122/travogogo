@@ -38,7 +38,7 @@
     
     /* Timeline Styles (使用 transform 強制完美置中) */
     .timeline-line { position: absolute; left: 16px; transform: translateX(-50%); top: 0; bottom: 0; width: 2px; }
-    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; position: absolute; left: -16px; transform: translateX(-50%); top: 1.5rem; z-index: 10; }
+    .timeline-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; position: absolute; left: -16px; transform: translateX(-50%); top: 1.1rem; z-index: 30; }
     
     /* Utility Classes */
     .check-item input:checked + span { text-decoration: line-through; opacity: 0.5; }
@@ -174,6 +174,7 @@
       <!-- 🌟 新增：黏貼式快捷導航列 (Sticky Quick Nav) -->
 <div id="day-nav-container" class="select-none sticky top-0 z-30 bg-white/95 backdrop-blur py-3 mb-8 -mx-6 px-6 border-b border-stone-100 flex gap-2 overflow-x-auto no-scrollbar" style="display: none;">
       </div>
+
 
       <div id="itinerary-container" class="space-y-8">
       </div>
@@ -670,7 +671,7 @@ itineraries.forEach((day, dayIndex) => {
 
         const dayDiv = document.createElement('div');
         dayDiv.id = `day-section-${dayIndex}`; 
-        dayDiv.className = 'mb-10';
+        dayDiv.className = 'mb-6'; /* 🌟 縮短 mb-10 為 mb-6 */
 
         dayDiv.innerHTML = `
           <div class="flex items-center justify-between mb-4 pl-8">
@@ -690,7 +691,7 @@ itineraries.forEach((day, dayIndex) => {
         (day.activities || []).forEach((activity, actIndex) => {
           const actDiv = document.createElement('div');
           // 🌟 加入 cursor-grab 提示用家可以拖拉
-          actDiv.className = 'relative mb-6 group cursor-grab active:cursor-grabbing';
+          actDiv.className = 'relative mb-3 group cursor-grab active:cursor-grabbing'; // 🌟 縮短 mb-6 為 mb-3
           
 // 🗺️ 支援新嘅 Address 欄位，如果無就用 Location。順便換咗保證唔會壞嘅原生 Google Maps 網址。
           const targetAddress = activity.address ? activity.address : activity.location;
@@ -705,8 +706,7 @@ itineraries.forEach((day, dayIndex) => {
          
           actDiv.innerHTML = `
             <div class="timeline-dot ${themeDotBg} ${themeDotShadow}"></div>
-            <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 ${themeBorderHover} transition w-full">
-              <div class="flex justify-between items-start">
+            <div class="bg-white rounded-xl px-4 py-3 shadow-sm border border-stone-100 ${themeBorderHover} transition w-full"> <div class="flex justify-between items-start">
                 <div>
                   <p class="text-xs font-heading text-stone-400 uppercase tracking-wide mb-1">${escapeHTML(activity.time || 'TBD')}</p>
                   <h4 class="font-heading font-600 text-stone-800">${escapeHTML(activity.location || 'Location')}</h4>
@@ -721,8 +721,7 @@ itineraries.forEach((day, dayIndex) => {
                 </div>
               </div>
               <p class="font-body text-stone-500 text-sm mt-1">${escapeHTML(activity.description || '')}</p>
-              <div class="flex items-center justify-between mt-3">
-                ${mapButtonHTML}
+              <div class="flex items-center justify-between mt-1.5"> ${mapButtonHTML}
               </div>
             </div>
           `;
