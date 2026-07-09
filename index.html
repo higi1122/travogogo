@@ -149,6 +149,9 @@
       <button id="home-btn" class="p-2 hover:bg-stone-100 rounded-lg transition text-stone-600" title="回到首頁">
         <i data-lucide="home" style="width: 20px; height: 20px;"></i>
       </button>
+      <button id="refresh-btn" class="p-2 hover:bg-stone-100 rounded-lg transition text-stone-600" title="重新同步雲端資料">
+        <i data-lucide="refresh-cw" style="width: 20px; height: 20px;"></i>
+      </button>
       <h1 id="app-title" class="font-heading font-700 text-xl text-stone-800 hidden sm:block">My Travel Planner</h1>
     </div>
     <div class="flex items-center gap-3">
@@ -1241,6 +1244,24 @@ if (result.isOk) {
       trip.end_date = document.getElementById('edit-trip-end').value;
       trip.summary = document.getElementById('edit-trip-summary').value;
 
+      // 🌟 新增：如果改咗出發日期，順便將 Itineraries 入面所有日子嘅 Title 一次過 Update 埋！
+      if (trip.start_date) {
+        const startDate = new Date(trip.start_date);
+        if (!isNaN(startDate.getTime())) {
+          const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
+          const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+          
+          itineraries.forEach((day, idx) => {
+            const d = new Date(startDate);
+            d.setDate(d.getDate() + idx);
+            const dateFull = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} (${weekdays[d.getDay()]})`;
+            day.title = `Day ${idx + 1} — ${dateFull}`;
+          });
+          
+          trip.itineraries = JSON.stringify(itineraries);
+        }
+      }
+
       // 更新本地暫存並即時更新畫面
       localStorage.setItem('travel_cached_data', JSON.stringify(allTrips));
       document.getElementById('edit-trip-modal').classList.add('hidden');
@@ -1249,8 +1270,8 @@ if (result.isOk) {
       // 同步去 Google Sheet
       const result = await window.dataSdk.update(trip);
       if (result.isOk) {
-        showToast('Trip details updated!');
-        if (typeof renderHomeView === 'function') renderHomeView(); // 順便更新埋首頁卡片嘅日期
+        showToast('行程資料及日期已更新！');
+        if (typeof renderHomeView === 'function') renderHomeView(); 
       }
     });
     // --- 結束 Edit Trip 邏輯 ---
@@ -1347,6 +1368,20 @@ selector.innerHTML = '<option value="home">顯示首頁大廳 (Home)</option><op
     });
   
 document.getElementById('home-btn').addEventListener('click', showHomeView);
+
+    // 🌟 新增：手動同步 (Refresh) 按鈕邏輯
+    document.getElementById('refresh-btn').addEventListener('click', async (e) => {
+      // 搵出 Lucide 渲染後嘅 svg 圖示
+      const svgIcon = e.currentTarget.querySelector('svg'); 
+      if (svgIcon) svgIcon.classList.add('animate-spin'); // 開啟 Tailwind 旋轉動畫
+      
+      showToast('手動同步中，請稍候...');
+      
+      // 呼叫 SDK 重新從 Google Sheet 攞一次最新資料
+      await window.dataSdk.init(dataHandler); 
+      
+      if (svgIcon) svgIcon.classList.remove('animate-spin'); // 同步完停咗個旋轉動畫
+    });
   
     // Tab Navigation Logic (底部導航列專用)
     document.querySelectorAll('.nav-tab').forEach(btn => {
@@ -1400,34 +1435,71 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       const endDate = document.getElementById('end-date-input').value;
       const summary = document.getElementById('summary-input').value;
 
+      // 🌟 新增：自動為新行程建立「Day 1」並計算好日期格式
+      let day1Title = "Day 1";
+      if (startDate) {
+        const d = new Date(startDate);
+        if (!isNaN(d.getTime())) {
+          const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+          const dateFull = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} (${weekdays[d.getDay()]})`;
+          day1Title = `Day 1 — ${dateFull}`;
+        }
+      }
+
+      const initialItinerary = [{
+        title: day1Title,
+        activities: []
+      }];
+
       const result = await window.dataSdk.create({
-        id: title, // 改為直接用 title 建立 (對應 Google Sheet 的 Tab 名稱)
+        id: title, 
         title,
         start_date: startDate,
         end_date: endDate,
         summary,
-        itineraries: JSON.stringify([]),
+        itineraries: JSON.stringify(initialItinerary), // 🌟 寫入預設好嘅 Day 1
         notes: '',
         packing_items: JSON.stringify([])
       });
 
       if (result.isOk) {
         document.getElementById('trip-form').reset();
-        showToast('Trip created successfully!');
+        showToast('新行程已建立 (已自動加入 Day 1)！');
+        
+        // 自動重新載入以獲取最新行程列表
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     });
 
-    // Add Day
+// Add Day
     document.getElementById('add-day-btn').addEventListener('click', async () => {
       const trip = allTrips.find(t => t.__backendId === currentTripId);
       if (!trip) return;
 
       const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
+      
+      // 1. 先加入空白嘅新一日
       itineraries.push({
         title: `Day ${itineraries.length + 1}`,
         activities: []
       });
       
+      // 2. 🌟 統一更新：幫「所有」日子（包括舊有同新加嘅）重新計算並套用標準日期格式
+      if (trip.start_date) {
+        const startDate = new Date(trip.start_date);
+        if (!isNaN(startDate.getTime())) {
+          const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+          itineraries.forEach((day, idx) => {
+            const d = new Date(startDate);
+            d.setDate(d.getDate() + idx);
+            const dateFull = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} (${weekdays[d.getDay()]})`;
+            day.title = `Day ${idx + 1} — ${dateFull}`; // 統一格式寫入 Google Sheet
+          });
+        }
+      }
+
       // 🐛 補回同步更新本地記憶體
       const newItinerariesStr = JSON.stringify(itineraries);
       trip.itineraries = newItinerariesStr;
@@ -1439,7 +1511,7 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
 
       if (result.isOk) {
         renderItineraries(itineraries);
-        showToast('New day added!');
+        showToast('已新增一日，並統一日期格式！');
       }
     });
 
