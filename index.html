@@ -204,9 +204,14 @@
 <div id="trip-detail-view" class="hidden">
         
      <header class="relative w-full h-[20%] min-h-[160px] overflow-hidden">
-      <button id="edit-trip-btn" class="absolute top-4 right-4 z-20 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur transition" title="編輯行程資料">
-        <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
-      </button>
+      <div class="absolute top-4 right-4 z-20 flex flex-col gap-3">
+        <button id="edit-trip-btn" class="p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur transition shadow-sm" title="編輯行程資料">
+          <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
+        </button>
+        <a href="https://docs.google.com/spreadsheets/d/1B_9ZewzYyluX3tQnbFUWN4umVE6lCM5ceQOotKi7s9M/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur transition flex items-center justify-center shadow-sm" title="開啟後台表單">
+          <i data-lucide="table" style="width: 16px; height: 16px;"></i>
+        </a>
+      </div>
       <div class="absolute inset-0 bg-gradient-to-br from-green-900 via-yellow-800 to-stone-900"></div>
       <svg class="absolute inset-0 w-full h-full opacity-10" viewbox="0 0 800 400" preserveaspectratio="xMidYMid slice">
        <path d="M0,300 Q200,200 400,280 T800,250 L800,400 L0,400 Z" fill="#fff" /> <circle cx="650" cy="80" r="40" fill="#fff" opacity="0.3" /> <path d="M100,350 L130,280 L160,350 Z" fill="#fff" opacity="0.2" /> <path d="M140,350 L180,260 L220,350 Z" fill="#fff" opacity="0.15" />
@@ -307,10 +312,42 @@
       <h3 class="font-heading font-700 text-2xl text-stone-800 mb-6 flex items-center gap-2">
           <i data-lucide="notebook" style="width: 24px; height: 24px;" class="text-green-500"></i> Trip Notes
       </h3>
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-stone-100">
-          <textarea id="notes-textarea" class="w-full h-64 bg-stone-50 border border-stone-200 rounded-lg p-4 font-body text-stone-600 resize-none focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Add your travel notes here..."></textarea> 
-          <button id="save-notes-btn" class="mt-4 px-6 py-2 bg-green-500 text-white rounded-lg font-heading font-600 hover:bg-green-600 transition">Save Notes</button>
+      <div class="bg-white rounded-xl p-5 shadow-sm border border-stone-100 mb-6">
+          <textarea id="new-note-input" class="w-full h-20 bg-stone-50 border border-stone-200 rounded-lg p-3 font-body text-stone-600 resize-none focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="寫低新嘅筆記..."></textarea> 
+          <div class="flex justify-end mt-3">
+              <button id="add-note-btn" class="px-5 py-2 bg-green-500 text-white rounded-lg font-heading text-sm font-600 hover:bg-green-600 transition flex items-center gap-2">
+                  <i data-lucide="plus" style="width: 16px; height: 16px;"></i> 新增筆記
+              </button>
+          </div>
       </div>
+      <div id="notes-list-container" class="space-y-4">
+          </div>
+     </div>
+
+     <div id="note-action-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+         <div class="bg-white rounded-t-2xl sm:rounded-xl p-6 w-full max-w-sm">
+             <h4 class="font-heading font-700 text-lg text-stone-800 mb-4 text-center">筆記選項</h4>
+             <div class="flex flex-col gap-3">
+                 <button id="note-action-edit" class="w-full py-3 bg-stone-100 text-stone-700 font-heading font-600 rounded-lg hover:bg-stone-200 transition flex items-center justify-center gap-2">
+                     <i data-lucide="pencil" style="width: 18px; height: 18px;"></i> 編輯 (Edit)
+                 </button>
+                 <button id="note-action-delete" class="w-full py-3 bg-red-50 text-red-600 font-heading font-600 rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2">
+                     <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i> 刪除 (Delete)
+                 </button>
+                 <button id="note-action-cancel" class="w-full py-3 bg-white border border-stone-200 text-stone-500 font-heading font-600 rounded-lg hover:bg-stone-50 transition mt-2">取消 (Cancel)</button>
+             </div>
+         </div>
+     </div>
+
+     <div id="note-edit-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+         <div class="bg-white rounded-xl p-6 w-full max-w-lg">
+             <h4 class="font-heading font-700 text-lg text-stone-800 mb-4">編輯筆記</h4>
+             <textarea id="edit-note-textarea" class="w-full h-40 bg-stone-50 border border-stone-200 rounded-lg p-4 font-body text-stone-600 resize-none focus:outline-none focus:ring-2 focus:ring-green-200"></textarea>
+             <div class="flex gap-3 mt-4">
+                 <button id="save-edit-note-btn" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-heading font-600 hover:bg-green-600 transition">儲存更改</button>
+                 <button id="cancel-edit-note-btn" class="flex-1 px-4 py-2 bg-stone-200 text-stone-700 rounded-lg font-heading font-600 hover:bg-stone-300 transition">取消</button>
+             </div>
+         </div>
      </div>
      
      <div id="packing-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
@@ -656,8 +693,18 @@ const dataHandler = {
       const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
       renderItineraries(itineraries);
 
-      // Load notes
-      document.getElementById('notes-textarea').value = trip.notes || '';
+      // 🌟 Load Notes (升級版：支援 Array 格式及兼容舊版字串)
+      let parsedNotes = [];
+      try {
+        parsedNotes = trip.notes ? JSON.parse(trip.notes) : [];
+        if (!Array.isArray(parsedNotes)) {
+          parsedNotes = trip.notes ? [{ content: trip.notes, timestamp: Date.now() }] : [];
+        }
+      } catch (e) {
+        // 兼容舊版純文字筆記
+        parsedNotes = trip.notes ? [{ content: trip.notes, timestamp: Date.now() }] : [];
+      }
+      renderNotesList(parsedNotes);
 
       // Load packing
       const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
@@ -1376,25 +1423,183 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       }
     });
 
-   // 1. 修正 Notes Save Logic 
-    document.getElementById('save-notes-btn').addEventListener('click', async () => {
+   // --- 🌟 升級版 Notes 邏輯：新增、渲染、長按編輯/刪除 ---
+    let notePressTimer;
+    let currentNoteActionIndex = null;
+
+    function renderNotesList(notesArr) {
+      const container = document.getElementById('notes-list-container');
+      container.innerHTML = '';
+      
+      if (notesArr.length === 0) {
+        container.innerHTML = '<p class="text-center text-stone-400 font-body text-sm py-8">暫時未有筆記，喺上面加返條啦！</p>';
+        return;
+      }
+      
+      notesArr.forEach((note, idx) => {
+        const noteDiv = document.createElement('div');
+        noteDiv.className = 'note-item p-5 bg-white shadow-sm border border-stone-100 rounded-xl relative cursor-pointer select-none transition hover:border-green-300';
+        noteDiv.dataset.index = idx;
+        
+        const dateStr = note.timestamp ? new Date(note.timestamp).toLocaleString('zh-HK', { hour12: false }) : '';
+        
+        noteDiv.innerHTML = `
+          <p class="font-body text-stone-700 whitespace-pre-wrap leading-relaxed">${escapeHTML(note.content)}</p>
+          <div class="text-xs text-stone-400 mt-3 pt-3 border-t border-stone-50 flex justify-between items-center">
+            <span>${dateStr}</span>
+            <span class="text-stone-300 flex items-center gap-1"><i data-lucide="mouse-pointer-click" style="width: 12px; height: 12px;"></i> 長按/右鍵管理</span>
+          </div>
+        `;
+        
+        // 長按邏輯 (支援手機 Touch 同電腦 Mouse)
+        const startPress = (e) => {
+          if (e.type === 'mousedown' && e.button !== 0) return; // 忽略滑鼠右鍵
+          notePressTimer = setTimeout(() => openNoteActionModal(idx), 500); 
+        };
+        const cancelPress = () => clearTimeout(notePressTimer);
+
+        noteDiv.addEventListener('touchstart', startPress, {passive: true});
+        noteDiv.addEventListener('touchend', cancelPress);
+        noteDiv.addEventListener('touchmove', cancelPress);
+        
+        noteDiv.addEventListener('mousedown', startPress);
+        noteDiv.addEventListener('mouseup', cancelPress);
+        noteDiv.addEventListener('mouseleave', cancelPress);
+        
+        // 支援直接滑鼠右鍵開啟
+        noteDiv.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          openNoteActionModal(idx);
+        });
+
+        container.appendChild(noteDiv);
+      });
+      lucide.createIcons();
+    }
+
+    function openNoteActionModal(idx) {
+      currentNoteActionIndex = idx;
+      document.getElementById('note-action-modal').classList.remove('hidden');
+    }
+
+    // 1. 新增筆記 (Add Note)
+    document.getElementById('add-note-btn').addEventListener('click', async () => {
       const trip = allTrips.find(t => t.__backendId === currentTripId);
       if (!trip) return;
 
-      const notes = document.getElementById('notes-textarea').value;
+      const input = document.getElementById('new-note-input');
+      const content = input.value.trim();
+      if (!content) return;
+
+      let parsedNotes = [];
+      try {
+        parsedNotes = trip.notes ? JSON.parse(trip.notes) : [];
+        if (!Array.isArray(parsedNotes)) parsedNotes = [];
+      } catch(e) { parsedNotes = []; }
+
+      parsedNotes.unshift({ content, timestamp: Date.now() }); // 加去最頂
       
-      // 🐛 Bugfix: 同步更新本地狀態
-      trip.notes = notes; 
+      const newNotesStr = JSON.stringify(parsedNotes);
+      trip.notes = newNotesStr;
 
-      const result = await window.dataSdk.update({
-        ...trip,
-        notes
-      });
-
+      const result = await window.dataSdk.update({ ...trip, notes: newNotesStr });
       if (result.isOk) {
-        showToast('Notes saved successfully!');
+        input.value = '';
+        renderNotesList(parsedNotes);
+        showToast('筆記已新增！');
       }
     });
+
+    // 2. 取消/關閉 Action Modal
+    document.getElementById('note-action-cancel').addEventListener('click', () => {
+      document.getElementById('note-action-modal').classList.add('hidden');
+    });
+    document.getElementById('note-action-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'note-action-modal') e.target.classList.add('hidden');
+    });
+
+    // 3. 刪除筆記 (Delete Note)
+    document.getElementById('note-action-delete').addEventListener('click', async () => {
+      if (currentNoteActionIndex === null) return;
+      if (!confirm('確定要刪除這條筆記嗎？')) return;
+      
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      const parsedNotes = JSON.parse(trip.notes);
+      parsedNotes.splice(currentNoteActionIndex, 1);
+      
+      trip.notes = JSON.stringify(parsedNotes);
+      const result = await window.dataSdk.update({ ...trip, notes: trip.notes });
+      
+      if (result.isOk) {
+        document.getElementById('note-action-modal').classList.add('hidden');
+        renderNotesList(parsedNotes);
+        showToast('筆記已刪除！');
+      }
+    });
+
+    // 4. 編輯筆記 (Edit Note)
+    document.getElementById('note-action-edit').addEventListener('click', () => {
+      if (currentNoteActionIndex === null) return;
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      
+      // 🌟 加強防禦：安全讀取，兼容新舊格式
+      let parsedNotes = [];
+      try {
+        parsedNotes = trip.notes ? JSON.parse(trip.notes) : [];
+        if (!Array.isArray(parsedNotes)) {
+          parsedNotes = trip.notes ? [{ content: trip.notes, timestamp: Date.now() }] : [];
+        }
+      } catch (e) {
+        parsedNotes = trip.notes ? [{ content: trip.notes, timestamp: Date.now() }] : [];
+      }
+      
+      const noteToEdit = parsedNotes[currentNoteActionIndex];
+      if (noteToEdit) {
+        document.getElementById('edit-note-textarea').value = noteToEdit.content || '';
+        document.getElementById('note-action-modal').classList.add('hidden');
+        document.getElementById('note-edit-modal').classList.remove('hidden');
+      } else {
+        showToast('無法讀取筆記內容', 'error');
+      }
+    });
+
+    // 5. 儲存編輯 (Save Edit)
+    document.getElementById('save-edit-note-btn').addEventListener('click', async () => {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      
+      let parsedNotes = [];
+      try {
+        parsedNotes = trip.notes ? JSON.parse(trip.notes) : [];
+        if (!Array.isArray(parsedNotes)) {
+          parsedNotes = trip.notes ? [{ content: trip.notes, timestamp: Date.now() }] : [];
+        }
+      } catch (e) {
+        parsedNotes = trip.notes ? [{ content: trip.notes, timestamp: Date.now() }] : [];
+      }
+      
+      if (parsedNotes[currentNoteActionIndex]) {
+        parsedNotes[currentNoteActionIndex].content = document.getElementById('edit-note-textarea').value.trim();
+        parsedNotes[currentNoteActionIndex].timestamp = Date.now(); 
+        
+        trip.notes = JSON.stringify(parsedNotes);
+        const result = await window.dataSdk.update({ ...trip, notes: trip.notes });
+        
+        if (result.isOk) {
+          document.getElementById('note-edit-modal').classList.add('hidden');
+          renderNotesList(parsedNotes);
+          showToast('筆記已更新！');
+        }
+      }
+    });
+
+    // 6. 取消編輯
+    document.getElementById('cancel-edit-note-btn').addEventListener('click', () => {
+      document.getElementById('note-edit-modal').classList.add('hidden');
+    });
+    document.getElementById('note-edit-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'note-edit-modal') e.target.classList.add('hidden');
+    });
+    // --- 結束 Notes 邏輯 ---
 
     // 2. 修正 Packing List Logic (新增項目)
     document.getElementById('add-packing-btn').addEventListener('click', async () => {
