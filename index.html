@@ -144,26 +144,25 @@
 
   <div id="app" class="w-full h-full flex flex-col bg-stone-50">
       
-<div class="bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between z-40 relative">
-    <div class="flex items-center gap-2">
-      <button id="home-btn" class="p-2 hover:bg-stone-100 rounded-lg transition text-stone-600" title="回到首頁">
+<div class="bg-white border-b border-stone-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between z-40 relative gap-2">
+    <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+      <button id="home-btn" class="p-1.5 sm:p-2 hover:bg-stone-100 rounded-lg transition text-stone-600" title="回到首頁">
         <i data-lucide="home" style="width: 20px; height: 20px;"></i>
       </button>
-      <button id="refresh-btn" class="p-2 hover:bg-stone-100 rounded-lg transition text-stone-600" title="重新同步雲端資料">
+      <button id="refresh-btn" class="p-1.5 sm:p-2 hover:bg-stone-100 rounded-lg transition text-stone-600" title="重新同步雲端資料">
         <i data-lucide="refresh-cw" style="width: 20px; height: 20px;"></i>
       </button>
-      <h1 id="app-title" class="font-heading font-700 text-xl text-stone-800 hidden sm:block">My Travel Planner</h1>
+      <h1 id="app-title" class="font-heading font-700 text-xl text-stone-800 hidden md:block">My Travel Planner</h1>
     </div>
-    <div class="flex items-center gap-3">
-     
-     <select id="trip-selector" class="px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg font-heading text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-green-200"> 
+    <div class="flex items-center gap-2 flex-1 justify-end min-w-0">
+        <select id="trip-selector" class="flex-1 min-w-0 max-w-[200px] sm:max-w-xs px-2 sm:px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg font-heading text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-green-200 truncate cursor-pointer"> 
             <option value="">Select a trip...</option> 
         </select> 
-        <button id="new-trip-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg font-heading text-sm font-600 hover:bg-green-600 transition flex items-center gap-2"> 
-            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>New 
+        <button id="new-trip-btn" class="shrink-0 px-3 sm:px-4 py-2 bg-green-500 text-white rounded-lg font-heading text-sm font-600 hover:bg-green-600 transition flex items-center gap-1 sm:gap-2"> 
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i><span class="hidden sm:inline">New</span>
         </button>
     </div>
-   </div>
+</div>
    
 <div id="main-content" class="flex-1 overflow-auto">
        
