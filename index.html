@@ -1548,9 +1548,9 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
           return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-green-500 font-600 hover:text-green-600 hover:underline break-all" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">${url}</a>`;
         });
         
-        // 卡片佈局：文字直接貼頂 (支援長文字強制換行)，日期壓縮到最細
+        // 卡片佈局：按鈕向右浮動 (Float)，文字自然包圍，不浪費按鈕下方空間
         noteDiv.innerHTML = `
-          <div class="absolute top-4 right-4 flex gap-3 text-stone-300">
+          <div class="float-right ml-4 mb-1 mt-0.5 flex gap-3 text-stone-300 relative z-10">
             <button class="edit-note-btn hover:text-green-500 transition" title="編輯" data-note-index="${idx}" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
               <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
             </button>
@@ -1558,8 +1558,8 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
               <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
             </button>
           </div>
-          <p class="font-body text-stone-700 whitespace-pre-wrap break-words leading-relaxed pr-12 min-h-[24px]">${safeContent}</p>
-          <div class="text-right mt-0 leading-none">
+          <p class="font-body text-stone-700 whitespace-pre-wrap break-words leading-relaxed min-h-[24px]">${safeContent}</p>
+          <div class="text-right mt-1 leading-none clear-both">
             <span class="text-[9px] text-stone-400 font-body opacity-40">${dateStr}</span>
           </div>
         `;
