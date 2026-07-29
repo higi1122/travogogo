@@ -369,7 +369,7 @@
       </div>
 
       <!-- 記帳紀錄列表 -->
-      <div class="bg-white rounded-xl p-6 shadow-sm border border-stone-100">
+     <div class="w-full mt-2">
        <div id="expenses-list" class="space-y-4">
          <div class="text-center text-stone-400 py-10 font-body text-sm">
            <i data-lucide="receipt" style="width: 48px; height: 48px;" class="mx-auto mb-3 opacity-50"></i>
@@ -431,6 +431,25 @@
             <label class="flex-1 text-center cursor-pointer">
               <input type="radio" name="expensePayer" value="Shared" class="peer hidden">
               <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 font-heading font-600 text-sm transition-all text-stone-500">💰 公數</div>
+            </label>
+          </div>
+         </div>
+
+         <!-- 🎯 為誰付款 (Pay For) -->
+         <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Pay For (為誰付款)</label>
+          <div class="flex gap-2">
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" name="expensePayFor" value="G" class="peer hidden">
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-amber-50 peer-checked:border-amber-500 peer-checked:text-amber-700 font-heading font-600 text-sm transition-all text-stone-500">👩 G</div>
+            </label>
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" name="expensePayFor" value="H" class="peer hidden">
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-700 font-heading font-600 text-sm transition-all text-stone-500">🧑 H</div>
+            </label>
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" name="expensePayFor" value="All" class="peer hidden" checked>
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 font-heading font-600 text-sm transition-all text-stone-500">👨‍👩‍👧 所有人</div>
             </label>
           </div>
          </div>
@@ -2043,6 +2062,10 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       const payerElement = document.querySelector('input[name="expensePayer"]:checked');
       const payer = payerElement ? payerElement.value : 'Shared';
 
+      // 🌟 攞「為誰付款」
+      const payForElement = document.querySelector('input[name="expensePayFor"]:checked');
+      const payFor = payForElement ? payForElement.value : 'All';
+
       // 攞「付款方式」同「細節」
       const methodElement = document.querySelector('input[name="payMethod"]:checked');
       const method = methodElement ? methodElement.value : 'cash';
@@ -2053,7 +2076,8 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
         detail = document.getElementById('specific-other-method').value.trim();
       }
 
-      const newExpense = { date, item, amount, payer, method, detail };
+      // 🌟 將 payFor 加入新紀錄
+      const newExpense = { date, item, amount, payer, payFor, method, detail };
       let expenses = trip.expenses ? JSON.parse(trip.expenses) : [];
       
       // 🌟 判斷係新增定編輯
@@ -2088,7 +2112,7 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       }
     });
 
- // --- 2. 渲染記帳列表及計算總數 (Render Expenses) ---
+// --- 2. 渲染記帳列表及計算總數 (Render Expenses) ---
     window.renderExpenses = function(expenses) {
       const container = document.getElementById('expenses-list');
       const totalEl = document.querySelector('#expenses-tab h4');
@@ -2106,58 +2130,108 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       }
 
       let total = 0;
-      
-      expenses.forEach((exp, idx) => {
-        total += exp.amount;
 
-        // 🎨 UI 魔法：根據付款人自動變色！
-        let payerColor = 'bg-stone-100 text-stone-600';
-        let payerIcon = '👤';
-        if (exp.payer === 'G') { payerColor = 'bg-amber-100 text-amber-700'; payerIcon = 'G'; }
-        else if (exp.payer === 'H') { payerColor = 'bg-rose-100 text-rose-700'; payerIcon = 'H'; }
-        else if (exp.payer === 'Shared') { payerColor = 'bg-emerald-100 text-emerald-700'; payerIcon = '💰'; }
+      // 🌟 1. 將 expenses 加上原始 index，確保 Edit / Delete 唔會錯
+      const expensesWithIndex = expenses.map((exp, idx) => {
+        total += Number(exp.amount || 0); // 順便計埋總數
+        return { ...exp, originalIndex: idx };
+      });
 
-        // 付款方式顯示
-        let methodDisplay = '';
-        if (exp.method === 'cash') methodDisplay = '💵 Cash';
-        else if (exp.method === 'card') methodDisplay = `💳 ${exp.detail || 'Card'}`;
-        else methodDisplay = `📱 ${exp.detail || 'Other'}`;
+      // 🌟 2. 根據 Date 群組化 (Group by Date)
+      const groupedExpenses = {};
+      expensesWithIndex.forEach(exp => {
+        const dateKey = exp.date || '未設定日期';
+        if (!groupedExpenses[dateKey]) {
+          groupedExpenses[dateKey] = [];
+        }
+        groupedExpenses[dateKey].push(exp);
+      });
 
-        const div = document.createElement('div');
-        div.className = 'flex items-center justify-between p-3 hover:bg-stone-50 rounded-xl border border-transparent hover:border-stone-100 transition group';
-        
-        // 🌟 完美復刻 Notes 嘅按鈕邏輯：改用 pencil、加 event.stopPropagation()、跟返你嘅 hover 顏色
-        div.innerHTML = `
-          <div class="flex items-center gap-3 overflow-hidden">
-            <div class="shrink-0 w-10 h-10 rounded-full ${payerColor} flex items-center justify-center font-heading text-lg shadow-sm">
-              ${payerIcon}
-            </div>
-            <div class="min-w-0">
-              <p class="font-heading font-700 text-stone-800 truncate">${escapeHTML(exp.item)}</p>
-              <div class="flex items-center gap-2 text-xs font-body text-stone-400 mt-0.5">
-                <span>${exp.date}</span>
-                <span class="w-1 h-1 rounded-full bg-stone-300"></span>
-                <span class="truncate max-w-[100px] sm:max-w-none">${escapeHTML(methodDisplay)}</span>
+      // 🌟 3. 將日期排序 (由新至舊：最近嘅日期排頂)
+      const sortedDates = Object.keys(groupedExpenses).sort((a, b) => {
+        if (a === '未設定日期') return 1;  // 冇日期嘅紀錄通常放最底
+        if (b === '未設定日期') return -1;
+        return new Date(b) - new Date(a); // 🌟 關鍵：用 b 減 a，最新嘅日期就會排上面
+      });
+
+      // 🌟 4. 開始渲染
+      sortedDates.forEach(date => {
+        // 計嗰日嘅總支出 (日結)
+        const dailyTotal = groupedExpenses[date].reduce((sum, e) => sum + Number(e.amount), 0);
+
+        // 📅 日期標題 (Sticky Header)
+        const dateHeader = document.createElement('div');
+        // 加入 sticky 同 backdrop-blur 做出原生 App 掃上去時標題停留嘅效果
+        dateHeader.className = 'sticky top-0 bg-stone-50/95 backdrop-blur-sm z-10 py-1.5 px-3 mt-2 border-b border-stone-200 flex justify-between items-end';
+        dateHeader.innerHTML = `
+          <span class="font-heading font-700 text-stone-500 text-xs tracking-wider">${date}</span>
+          <span class="font-heading font-600 text-stone-400 text-[10px]">日結: $${dailyTotal.toLocaleString('en-US')}</span>
+        `;
+        container.appendChild(dateHeader);
+
+        // 該日嘅項目清單容器 (減低外圍 padding)
+        const listGroup = document.createElement('div');
+        listGroup.className = 'bg-white px-3 mb-2 shadow-sm rounded-b-xl border border-t-0 border-stone-100'; 
+
+        // 🌟 加咗 .reverse()，令到同一日入面，最新加嗰筆數都會排喺嗰日嘅最頂
+        groupedExpenses[date].reverse().forEach(exp => {
+          // 🎨 UI 魔法：根據「付款人」自動變色頭像
+          let payerColor = 'bg-stone-100 text-stone-600';
+          let payerIcon = '👤';
+          if (exp.payer === 'G') { payerColor = 'bg-amber-100 text-amber-700'; payerIcon = '👩G'; }
+          else if (exp.payer === 'H') { payerColor = 'bg-rose-100 text-rose-700'; payerIcon = '🧑H'; }
+          else if (exp.payer === 'Shared') { payerColor = 'bg-emerald-100 text-emerald-700'; payerIcon = '💰'; }
+
+          // 付款方式顯示
+          let methodDisplay = '';
+          if (exp.method === 'cash') methodDisplay = '💵 Cash';
+          else if (exp.method === 'card') methodDisplay = `💳 ${exp.detail || 'Card'}`;
+          else methodDisplay = `📱 ${exp.detail || 'Other'}`;
+
+          // 為誰付款顯示 (Pay For)
+          let payForDisplay = '';
+          if (exp.payFor === 'G') payForDisplay = '➡️ 👩 G';
+          else if (exp.payFor === 'H') payForDisplay = '➡️ 🧑 H';
+          else payForDisplay = '➡️ 👨‍👩‍👧 所有人';
+
+          const div = document.createElement('div');
+          // 🌟 收窄 padding (py-2.5 px-1)，改用 border-b 呈現緊湊嘅清單風格
+          div.className = 'flex items-center justify-between py-2.5 px-1 hover:bg-stone-50 border-b border-stone-100 last:border-0 transition group';
+          
+          // 🌟 頭像、字體、按鈕尺寸全面微縮，移除多餘嘅日期顯示
+          div.innerHTML = `
+            <div class="flex items-center gap-3 overflow-hidden">
+              <div class="shrink-0 w-8 h-8 rounded-full ${payerColor} flex items-center justify-center font-heading text-sm shadow-sm" title="Paid by: ${exp.payer}">
+                ${payerIcon}
+              </div>
+              <div class="min-w-0">
+                <p class="font-heading font-700 text-stone-800 text-sm truncate">${escapeHTML(exp.item)}</p>
+                <div class="flex items-center gap-1.5 text-[11px] font-body text-stone-400 mt-0.5 whitespace-nowrap overflow-hidden">
+                  <span class="shrink-0 truncate max-w-[80px] sm:max-w-none">${escapeHTML(methodDisplay)}</span>
+                  <span class="shrink-0 w-1 h-1 rounded-full bg-stone-300"></span>
+                  <span class="font-600 text-blue-500 shrink-0">${escapeHTML(payForDisplay)}</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="flex flex-col items-end gap-1 shrink-0 pl-2 relative z-10">
-            <!-- 常駐右上角按鈕 (Edit & Delete) -->
-            <div class="flex items-center gap-3 text-stone-300">
-              <button class="hover:text-green-500 transition" title="編輯" onclick="editExpense(${idx})" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
-                <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
-              </button>
-              <button class="hover:text-red-600 transition" title="刪除" onclick="deleteExpense(${idx})" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
-                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
-              </button>
+            <div class="flex flex-col items-end gap-1 shrink-0 pl-2 relative z-10">
+              <div class="flex items-center gap-3 text-stone-300">
+                <!-- 🌟 使用 originalIndex 對應資料庫 -->
+                <button class="hover:text-green-500 transition" title="編輯" onclick="editExpense(${exp.originalIndex})" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+                  <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                </button>
+                <button class="hover:text-red-600 transition" title="刪除" onclick="deleteExpense(${exp.originalIndex})" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+                  <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                </button>
+              </div>
+              <span class="font-heading font-800 text-stone-800 text-base leading-none mt-0.5">$${Number(exp.amount).toLocaleString('en-US')}</span>
             </div>
-            <span class="font-heading font-800 text-stone-800 text-lg leading-none mt-1">$${Number(exp.amount).toLocaleString('en-US')}</span>
-          </div>
-        `;
-        container.appendChild(div);
+          `;
+          listGroup.appendChild(div);
+        });
+        
+        container.appendChild(listGroup);
       });
       
-      // 更新深色卡片上面嘅總數 (加入千位數逗號)
       totalEl.textContent = '$ ' + Number(total).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
       lucide.createIcons();
     }
@@ -2170,15 +2244,12 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       if (!trip) return;
 
       let expenses = trip.expenses ? JSON.parse(trip.expenses) : [];
-      expenses.splice(idx, 1); // 刪除所選項
+      expenses.splice(idx, 1); 
       
       const newExpensesStr = JSON.stringify(expenses);
       trip.expenses = newExpensesStr;
 
-      const result = await window.dataSdk.update({
-        ...trip,
-        expenses: newExpensesStr
-      });
+      const result = await window.dataSdk.update({ ...trip, expenses: newExpensesStr });
 
       if (result.isOk) {
         renderExpenses(expenses);
@@ -2194,17 +2265,21 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       const exp = expenses[idx];
       if (!exp) return;
 
-      // 1. 填入基本資料
       document.getElementById('expense-date').value = exp.date || '';
       document.getElementById('expense-item').value = exp.item || '';
       document.getElementById('expense-amount').value = exp.amount || '';
 
-      // 2. 選擇付款人
+      // 選擇付款人
       document.querySelectorAll('input[name="expensePayer"]').forEach(r => {
         r.checked = (r.value === (exp.payer || 'Shared'));
       });
 
-      // 3. 選擇付款方式及顯示細節
+      // 🌟 選擇為誰付款 (Pay For)
+      document.querySelectorAll('input[name="expensePayFor"]').forEach(r => {
+        r.checked = (r.value === (exp.payFor || 'All'));
+      });
+
+      // 選擇付款方式及顯示細節
       document.querySelectorAll('input[name="payMethod"]').forEach(r => {
         r.checked = (r.value === (exp.method || 'cash'));
       });
@@ -2222,14 +2297,9 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
         document.getElementById('specific-other-method').value = exp.detail || '';
       }
 
-      // 4. 設定為「編輯模式」 (話畀 Save 掣知而家改緊邊行)
       document.getElementById('save-expense-btn').dataset.editIndex = idx;
-      
-      // 改 Modal 標題
       const modalTitle = document.querySelector('#expense-modal h4');
       if (modalTitle) modalTitle.textContent = 'Edit Expense (編輯記帳)';
-
-      // 顯示 Modal
       document.getElementById('expense-modal').classList.remove('hidden');
     }
 
