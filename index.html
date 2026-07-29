@@ -361,11 +361,17 @@
        </button>
       </div>
 
-      <!-- 總結卡片 -->
-      <div class="bg-gradient-to-br from-stone-800 to-stone-900 rounded-xl p-6 shadow-sm mb-6 text-white relative overflow-hidden">
-        <i data-lucide="coins" style="width: 120px; height: 120px;" class="absolute -right-4 -bottom-4 text-white opacity-10"></i>
-        <p class="font-heading text-sm text-stone-300 mb-1">Total Trip Expenses</p>
-        <h4 class="font-heading font-800 text-4xl text-green-400">$ 0.00</h4>
+<!-- 輕量化總結卡片 -->
+      <div class="bg-white rounded-xl py-3 px-4 shadow-sm mb-3 border border-stone-100 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <!-- 將原本巨大嘅暗花 Icon 變成左邊精緻嘅主題色小圖示 -->
+          <div class="bg-green-50 text-green-600 p-1.5 rounded-lg shrink-0">
+            <i data-lucide="coins" style="width: 18px; height: 18px;"></i>
+          </div>
+          <p class="font-heading text-sm text-stone-500 font-600">Total Trip Expenses</p>
+        </div>
+        <!-- 保留 h4 畀 JavaScript 認得，字體縮至 text-2xl，改用沉穩嘅深灰色 -->
+        <h4 class="font-heading font-800 text-2xl text-stone-800 tracking-tight">$ 0.00</h4>
       </div>
 
       <!-- 記帳紀錄列表 -->
