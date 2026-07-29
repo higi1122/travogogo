@@ -528,12 +528,15 @@
     </div>
    </div>
    
-<nav id="bottom-nav" class="bg-white border-t border-stone-200 px-6 py-3 flex justify-center gap-2 hidden z-40 relative">
-       <button id="tab-itinerary" class="nav-tab active px-4 py-2 rounded-lg font-heading text-xs font-600 text-green-600 bg-green-50">Itinerary</button>       <button id="tab-notes" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Notes</button> 
-       <button id="tab-packing" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Packing</button>
-       <button id="tab-expenses" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Expenses</button>
-       <button id="tab-settings" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Setting</button>
-   </nav>
+<!-- 🌟 升級版 Bottom Nav：平均分佈、防爆字、預留手機底部安全區 -->
+    <nav id="bottom-nav" class="bg-white border-t border-stone-200 px-3 py-3 flex justify-between items-center gap-1 w-full hidden z-40 relative">
+       <!-- flex-1: 平均分配空間 / px-1: 減少左右內距 / truncate: 文字太長自動變... -->
+       <button id="tab-itinerary" class="nav-tab active flex-1 px-1 py-2 rounded-lg font-heading text-[11px] sm:text-xs font-600 text-center text-green-600 bg-green-50 truncate">Itinerary</button> 
+       <button id="tab-notes" class="nav-tab flex-1 px-1 py-2 rounded-lg font-heading text-[11px] sm:text-xs font-600 text-center text-stone-600 hover:bg-stone-100 truncate">Notes</button> 
+       <button id="tab-packing" class="nav-tab flex-1 px-1 py-2 rounded-lg font-heading text-[11px] sm:text-xs font-600 text-center text-stone-600 hover:bg-stone-100 truncate">Packing</button>
+       <button id="tab-expenses" class="nav-tab flex-1 px-1 py-2 rounded-lg font-heading text-[11px] sm:text-xs font-600 text-center text-stone-600 hover:bg-stone-100 truncate">Expenses</button>
+       <button id="tab-settings" class="nav-tab flex-1 px-1 py-2 rounded-lg font-heading text-[11px] sm:text-xs font-600 text-center text-stone-600 hover:bg-stone-100 truncate">Setting</button>
+    </nav>
   </div>
 
   <div id="toast-container" class="fixed bottom-20 right-4 z-50 flex flex-col gap-2"></div>
