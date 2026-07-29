@@ -350,7 +350,35 @@
        </div>
       </div>
      </div>
-     
+     <!-- 💰 Expenses Tab -->
+     <div id="expenses-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
+      <div class="flex items-center justify-between mb-6">
+       <h3 class="font-heading font-700 text-2xl text-stone-800 flex items-center gap-2">
+           <i data-lucide="wallet" style="width: 24px; height: 24px;" class="text-green-500"></i> Expenses
+       </h3>
+       <button id="add-expense-btn" class="px-4 py-2 bg-green-500 text-white rounded-lg font-heading text-sm font-600 hover:bg-green-600 transition flex items-center gap-2"> 
+           <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Add Expense 
+       </button>
+      </div>
+
+      <!-- 總結卡片 -->
+      <div class="bg-gradient-to-br from-stone-800 to-stone-900 rounded-xl p-6 shadow-sm mb-6 text-white relative overflow-hidden">
+        <i data-lucide="coins" style="width: 120px; height: 120px;" class="absolute -right-4 -bottom-4 text-white opacity-10"></i>
+        <p class="font-heading text-sm text-stone-300 mb-1">Total Trip Expenses</p>
+        <h4 class="font-heading font-800 text-4xl text-green-400">$ 0.00</h4>
+      </div>
+
+      <!-- 記帳紀錄列表 -->
+      <div class="bg-white rounded-xl p-6 shadow-sm border border-stone-100">
+       <div id="expenses-list" class="space-y-4">
+         <div class="text-center text-stone-400 py-10 font-body text-sm">
+           <i data-lucide="receipt" style="width: 48px; height: 48px;" class="mx-auto mb-3 opacity-50"></i>
+           暫時未有支出紀錄
+         </div>
+       </div>
+      </div>
+     </div>
+
      <div id="settings-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
       <h3 class="font-heading font-700 text-2xl text-stone-800 mb-6 flex items-center gap-2">
           <i data-lucide="settings" style="width: 24px; height: 24px;" class="text-green-500"></i> Settings
@@ -379,7 +407,93 @@
      </div>
 
     </div>
-    
+    <!-- 💸 Add Expense Modal -->
+      <div id="expense-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+       <div class="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-auto">
+        <h4 class="font-heading font-700 text-lg text-stone-800 mb-4">Add Expense</h4>
+        <div class="space-y-4">
+
+         <!-- 👤 邊個畀錢 (Payer) -->
+         <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Paid By (付款人)</label>
+          <div class="flex gap-2">
+            <!-- G -->
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" name="expensePayer" value="G" class="peer hidden" checked>
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-amber-50 peer-checked:border-amber-500 peer-checked:text-amber-700 font-heading font-600 text-sm transition-all text-stone-500">👩 G</div>
+            </label>
+            <!-- H -->
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" name="expensePayer" value="H" class="peer hidden">
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-700 font-heading font-600 text-sm transition-all text-stone-500">🧑 H</div>
+            </label>
+            <!-- 公數 -->
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" name="expensePayer" value="Shared" class="peer hidden">
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 font-heading font-600 text-sm transition-all text-stone-500">💰 公數</div>
+            </label>
+          </div>
+         </div>
+         
+         <!-- 📅 日期 (Date) -->
+         <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Date (日期)</label>
+          <input type="date" id="expense-date" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm text-stone-600 focus:outline-none focus:ring-2 focus:ring-green-200 cursor-pointer" required>
+         </div>
+
+         <div class="flex gap-3">
+          <div class="flex-1">
+           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Item (項目)</label> 
+           <input type="text" id="expense-item" placeholder="e.g., Dinner" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200" required>
+          </div>
+          <div class="w-1/3">
+           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Amount</label> 
+           <input type="number" id="expense-amount" placeholder="$" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm font-bold text-green-600 focus:outline-none focus:ring-2 focus:ring-green-200" required>
+          </div>
+         </div>
+
+         <!-- 付款方式 Radio Chips -->
+         <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Payment Method</label>
+          <div class="flex gap-2">
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" name="payMethod" value="cash" class="peer hidden" checked>
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-green-50 peer-checked:border-green-500 peer-checked:text-green-700 font-heading font-600 text-sm transition-all text-stone-500">💵 Cash</div>
+            </label>
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" name="payMethod" value="card" class="peer hidden">
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 font-heading font-600 text-sm transition-all text-stone-500">💳 Card</div>
+            </label>
+            <label class="flex-1 text-center cursor-pointer">
+              <input type="radio" name="payMethod" value="other" class="peer hidden">
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-purple-50 peer-checked:border-purple-500 peer-checked:text-purple-700 font-heading font-600 text-sm transition-all text-stone-500">📱 Other</div>
+            </label>
+          </div>
+          
+          <!-- 隱藏嘅信用卡選擇 -->
+          <div id="card-selector-container" class="mt-3 hidden">
+            <select id="specific-card" class="w-full px-4 py-2 bg-stone-50 border border-blue-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 outline-none">
+              <option value="" disabled selected>👉 Select a credit card...</option>
+              <option value="BOC Chill">BOC Chill</option>
+              <option value="Hang Seng MM">Hang Seng MM</option>
+              <option value="Hang Seng MM">Others</option>
+            </select>
+          </div>
+
+<!-- 隱藏嘅自訂輸入 (其他) -->
+          <div id="other-method-container" class="mt-3 hidden">
+            <input type="text" id="specific-other-method" placeholder="請輸入付款方式 (例: Alipay, 八達通)" class="w-full px-4 py-2 bg-stone-50 border border-purple-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 outline-none">
+          </div>
+         </div>          
+
+        </div>
+        <div class="flex gap-3 mt-6">
+         <button id="save-expense-btn" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-heading font-600 hover:bg-green-600 transition">Save Record</button> 
+         <button id="close-expense-modal-btn" class="flex-1 px-4 py-2 bg-stone-200 text-stone-700 rounded-lg font-heading font-600 hover:bg-stone-300 transition">Cancel</button>
+        </div>
+       </div>
+      </div>
+
     <div id="empty-state" class="flex items-center justify-center h-full">
      <div class="text-center py-20">
       <i data-lucide="map-pin" style="width: 64px; height: 64px;" class="text-stone-300 mx-auto mb-4"></i>
@@ -392,6 +506,7 @@
 <nav id="bottom-nav" class="bg-white border-t border-stone-200 px-6 py-3 flex justify-center gap-2 hidden z-40 relative">
        <button id="tab-itinerary" class="nav-tab active px-4 py-2 rounded-lg font-heading text-xs font-600 text-green-600 bg-green-50">Itinerary</button>       <button id="tab-notes" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Notes</button> 
        <button id="tab-packing" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Packing</button>
+       <button id="tab-expenses" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Expenses</button>
        <button id="tab-settings" class="nav-tab px-4 py-2 rounded-lg font-heading text-xs font-600 text-stone-600 hover:bg-stone-100">Setting</button>
    </nav>
   </div>
@@ -696,6 +811,10 @@ const dataHandler = {
       // Load packing
       const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
       renderPackingList(packingItems);
+
+      // 🌟 Load expenses (記帳)
+      const expenses = trip.expenses ? JSON.parse(trip.expenses) : [];
+      renderExpenses(expenses);
     }
 
  function renderItineraries(itineraries) {
@@ -1845,6 +1964,275 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       e.preventDefault();
       dayNavContainer.scrollLeft += e.deltaY;
     }, { passive: false });
+
+// --- 🌟 Expenses 介面互動邏輯 ---
+    const expenseModal = document.getElementById('expense-modal');
+    const btnAddExpense = document.getElementById('add-expense-btn');
+    const btnCloseExpenseModal = document.getElementById('close-expense-modal-btn');
+    const payMethodRadios = document.querySelectorAll('input[name="payMethod"]');
+    const cardSelectorContainer = document.getElementById('card-selector-container');
+
+    // 開關 Modal
+    btnAddExpense.addEventListener('click', () => {
+      // 🌟 清除編輯狀態，確保係「新增模式」
+      document.getElementById('save-expense-btn').dataset.editIndex = "";
+      const modalTitle = document.querySelector('#expense-modal h4');
+      if (modalTitle) modalTitle.textContent = 'Add Expense';
+      
+      // 清空輸入框
+      document.getElementById('expense-item').value = '';
+      document.getElementById('expense-amount').value = '';
+
+      // 🌟 UX 貼心細節：每次打開記帳，自動預設為今日日期 (YYYY-MM-DD)
+      const today = new Date();
+      // 處理時區問題，確保輸出正確本地日期
+      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+      document.getElementById('expense-date').value = localDate;
+      
+      expenseModal.classList.remove('hidden');
+    });
+    
+    btnCloseExpenseModal.addEventListener('click', () => {
+      expenseModal.classList.add('hidden');
+    });
+
+    // 點擊黑色半透明背景自動關閉視窗
+    expenseModal.addEventListener('click', (e) => {
+      if (e.target.id === 'expense-modal') {
+        expenseModal.classList.add('hidden');
+      }
+    });
+
+    // 付款方式動態顯示 (信用卡 / 其他)
+    const otherMethodContainer = document.getElementById('other-method-container');
+    
+    payMethodRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        // 先將兩個隱藏欄位收埋，並清空數值
+        cardSelectorContainer.classList.add('hidden');
+        otherMethodContainer.classList.add('hidden');
+        document.getElementById('specific-card').value = ""; 
+        document.getElementById('specific-other-method').value = ""; 
+
+        // 根據選擇彈出對應欄位
+        if (e.target.value === 'card') {
+          cardSelectorContainer.classList.remove('hidden');
+        } else if (e.target.value === 'other') {
+          otherMethodContainer.classList.remove('hidden');
+        }
+      });
+    });
+
+    // --- 1. 儲存記帳資料 (Save Expense) ---
+    document.getElementById('save-expense-btn').addEventListener('click', async () => {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      const date = document.getElementById('expense-date').value;
+      const item = document.getElementById('expense-item').value.trim();
+      const amountInput = document.getElementById('expense-amount').value;
+      const amount = parseFloat(amountInput);
+
+      // 防呆：確保填齊資料
+      if (!date || !item || isNaN(amount)) {
+        showToast('請填寫完整日期、項目及有效金額！', 'error');
+        return;
+      }
+
+      // 攞「付款人」
+      const payerElement = document.querySelector('input[name="expensePayer"]:checked');
+      const payer = payerElement ? payerElement.value : 'Shared';
+
+      // 攞「付款方式」同「細節」
+      const methodElement = document.querySelector('input[name="payMethod"]:checked');
+      const method = methodElement ? methodElement.value : 'cash';
+      let detail = '';
+      if (method === 'card') {
+        detail = document.getElementById('specific-card').value || '';
+      } else if (method === 'other') {
+        detail = document.getElementById('specific-other-method').value.trim();
+      }
+
+      const newExpense = { date, item, amount, payer, method, detail };
+      let expenses = trip.expenses ? JSON.parse(trip.expenses) : [];
+      
+      // 🌟 判斷係新增定編輯
+      const editIndex = document.getElementById('save-expense-btn').dataset.editIndex;
+      if (editIndex !== undefined && editIndex !== "") {
+        expenses[editIndex] = newExpense; // 覆蓋舊紀錄
+      } else {
+        expenses.push(newExpense); // 新增紀錄
+      }
+
+      // 🌟 按照日期由新至舊排序
+      expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      const newExpensesStr = JSON.stringify(expenses);
+      trip.expenses = newExpensesStr;
+
+      // 掟上 Google Sheet
+      const result = await window.dataSdk.update({
+        ...trip,
+        expenses: newExpensesStr
+      });
+
+      if (result.isOk) {
+        document.getElementById('expense-modal').classList.add('hidden');
+        renderExpenses(expenses);
+        showToast('記帳紀錄已儲存！');
+        
+        // UX 小細節：清空輸入框，但特登保留「日期」，方便連續入同一日嘅數！
+        document.getElementById('expense-item').value = '';
+        document.getElementById('expense-amount').value = '';
+        document.getElementById('specific-other-method').value = '';
+      }
+    });
+
+ // --- 2. 渲染記帳列表及計算總數 (Render Expenses) ---
+    window.renderExpenses = function(expenses) {
+      const container = document.getElementById('expenses-list');
+      const totalEl = document.querySelector('#expenses-tab h4');
+      container.innerHTML = '';
+
+      if (!expenses || expenses.length === 0) {
+        totalEl.textContent = '$ 0';
+        container.innerHTML = `
+          <div class="text-center text-stone-400 py-10 font-body text-sm">
+            <i data-lucide="receipt" style="width: 48px; height: 48px;" class="mx-auto mb-3 opacity-50"></i>
+            暫時未有支出紀錄
+          </div>`;
+        lucide.createIcons();
+        return;
+      }
+
+      let total = 0;
+      
+      expenses.forEach((exp, idx) => {
+        total += exp.amount;
+
+        // 🎨 UI 魔法：根據付款人自動變色！
+        let payerColor = 'bg-stone-100 text-stone-600';
+        let payerIcon = '👤';
+        if (exp.payer === 'G') { payerColor = 'bg-amber-100 text-amber-700'; payerIcon = 'G'; }
+        else if (exp.payer === 'H') { payerColor = 'bg-rose-100 text-rose-700'; payerIcon = 'H'; }
+        else if (exp.payer === 'Shared') { payerColor = 'bg-emerald-100 text-emerald-700'; payerIcon = '💰'; }
+
+        // 付款方式顯示
+        let methodDisplay = '';
+        if (exp.method === 'cash') methodDisplay = '💵 Cash';
+        else if (exp.method === 'card') methodDisplay = `💳 ${exp.detail || 'Card'}`;
+        else methodDisplay = `📱 ${exp.detail || 'Other'}`;
+
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-3 hover:bg-stone-50 rounded-xl border border-transparent hover:border-stone-100 transition group';
+        
+        // 🌟 完美復刻 Notes 嘅按鈕邏輯：改用 pencil、加 event.stopPropagation()、跟返你嘅 hover 顏色
+        div.innerHTML = `
+          <div class="flex items-center gap-3 overflow-hidden">
+            <div class="shrink-0 w-10 h-10 rounded-full ${payerColor} flex items-center justify-center font-heading text-lg shadow-sm">
+              ${payerIcon}
+            </div>
+            <div class="min-w-0">
+              <p class="font-heading font-700 text-stone-800 truncate">${escapeHTML(exp.item)}</p>
+              <div class="flex items-center gap-2 text-xs font-body text-stone-400 mt-0.5">
+                <span>${exp.date}</span>
+                <span class="w-1 h-1 rounded-full bg-stone-300"></span>
+                <span class="truncate max-w-[100px] sm:max-w-none">${escapeHTML(methodDisplay)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col items-end gap-1 shrink-0 pl-2 relative z-10">
+            <!-- 常駐右上角按鈕 (Edit & Delete) -->
+            <div class="flex items-center gap-3 text-stone-300">
+              <button class="hover:text-green-500 transition" title="編輯" onclick="editExpense(${idx})" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+                <i data-lucide="pencil" style="width: 16px; height: 16px;"></i>
+              </button>
+              <button class="hover:text-red-600 transition" title="刪除" onclick="deleteExpense(${idx})" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+            <span class="font-heading font-800 text-stone-800 text-lg leading-none mt-1">$${Number(exp.amount).toLocaleString('en-US')}</span>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      
+      // 更新深色卡片上面嘅總數 (加入千位數逗號)
+      totalEl.textContent = '$ ' + Number(total).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+      lucide.createIcons();
+    }
+
+    // --- 3. 刪除記帳紀錄 (Delete Expense) ---
+    window.deleteExpense = async function(idx) {
+      if (!confirm('確定要刪除這筆支出嗎？')) return;
+
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+
+      let expenses = trip.expenses ? JSON.parse(trip.expenses) : [];
+      expenses.splice(idx, 1); // 刪除所選項
+      
+      const newExpensesStr = JSON.stringify(expenses);
+      trip.expenses = newExpensesStr;
+
+      const result = await window.dataSdk.update({
+        ...trip,
+        expenses: newExpensesStr
+      });
+
+      if (result.isOk) {
+        renderExpenses(expenses);
+        showToast('已刪除支出紀錄！');
+      }
+    }
+
+    // --- 4. 編輯記帳紀錄 (Edit Expense) ---
+    window.editExpense = function(idx) {
+      const trip = allTrips.find(t => t.__backendId === currentTripId);
+      if (!trip) return;
+      let expenses = trip.expenses ? JSON.parse(trip.expenses) : [];
+      const exp = expenses[idx];
+      if (!exp) return;
+
+      // 1. 填入基本資料
+      document.getElementById('expense-date').value = exp.date || '';
+      document.getElementById('expense-item').value = exp.item || '';
+      document.getElementById('expense-amount').value = exp.amount || '';
+
+      // 2. 選擇付款人
+      document.querySelectorAll('input[name="expensePayer"]').forEach(r => {
+        r.checked = (r.value === (exp.payer || 'Shared'));
+      });
+
+      // 3. 選擇付款方式及顯示細節
+      document.querySelectorAll('input[name="payMethod"]').forEach(r => {
+        r.checked = (r.value === (exp.method || 'cash'));
+      });
+      
+      const cardContainer = document.getElementById('card-selector-container');
+      const otherContainer = document.getElementById('other-method-container');
+      cardContainer.classList.add('hidden');
+      otherContainer.classList.add('hidden');
+      
+      if (exp.method === 'card') {
+        cardContainer.classList.remove('hidden');
+        document.getElementById('specific-card').value = exp.detail || '';
+      } else if (exp.method === 'other') {
+        otherContainer.classList.remove('hidden');
+        document.getElementById('specific-other-method').value = exp.detail || '';
+      }
+
+      // 4. 設定為「編輯模式」 (話畀 Save 掣知而家改緊邊行)
+      document.getElementById('save-expense-btn').dataset.editIndex = idx;
+      
+      // 改 Modal 標題
+      const modalTitle = document.querySelector('#expense-modal h4');
+      if (modalTitle) modalTitle.textContent = 'Edit Expense (編輯記帳)';
+
+      // 顯示 Modal
+      document.getElementById('expense-modal').classList.remove('hidden');
+    }
+
     // --- 結束橫向滾動支援 ---
     // Element SDK Initialization
     const defaultConfig = { app_title: 'Travogogo' };
