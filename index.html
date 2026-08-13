@@ -2057,15 +2057,12 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       if (!trip) return;
 
       const date = document.getElementById('expense-date').value;
-      const item = document.getElementById('expense-item').value.trim();
+      const item = document.getElementById('expense-item').value.trim() || '未命名項目'; // 🌟 冇填項目就畀個預設名
       const amountInput = document.getElementById('expense-amount').value;
-      const amount = parseFloat(amountInput);
+      const amount = isNaN(parseFloat(amountInput)) ? 0 : parseFloat(amountInput); // 🌟 冇填金額就當 0 蚊
 
-      // 防呆：確保填齊資料
-      if (!date || !item || isNaN(amount)) {
-        showToast('請填寫完整日期、項目及有效金額！', 'error');
-        return;
-      }
+      // 🌟 移除防呆限制，容許直接儲存！
+      // (完全唔阻住用家，就算淨係填咗是但一樣都 Save 到)
 
       // 攞「付款人」
       const payerElement = document.querySelector('input[name="expensePayer"]:checked');
