@@ -413,7 +413,7 @@
      </div>
 
     </div>
-<!-- 💸 Add Expense Modal -->
+    <!-- 💸 Add Expense Modal -->
       <div id="expense-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
        <div class="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-auto">
         <h4 class="font-heading font-700 text-lg text-stone-800 mb-4">Add Expense</h4>
@@ -426,17 +426,17 @@
             <!-- G -->
             <label class="flex-1 text-center cursor-pointer">
               <input type="radio" name="expensePayer" value="G" class="peer hidden" checked>
-              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-amber-50 peer-checked:border-amber-500 peer-checked:text-amber-700 font-heading font-600 text-sm transition-all text-stone-500 box-border">👩 G</div>
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-amber-50 peer-checked:border-amber-500 peer-checked:text-amber-700 font-heading font-600 text-sm transition-all text-stone-500">👩 G</div>
             </label>
             <!-- H -->
             <label class="flex-1 text-center cursor-pointer">
               <input type="radio" name="expensePayer" value="H" class="peer hidden">
-              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-700 font-heading font-600 text-sm transition-all text-stone-500 box-border">🧑 H</div>
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-700 font-heading font-600 text-sm transition-all text-stone-500">🧑 H</div>
             </label>
             <!-- 公數 -->
             <label class="flex-1 text-center cursor-pointer">
               <input type="radio" name="expensePayer" value="Shared" class="peer hidden">
-              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 font-heading font-600 text-sm transition-all text-stone-500 box-border">💰 公數</div>
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 font-heading font-600 text-sm transition-all text-stone-500">💰 公數</div>
             </label>
           </div>
          </div>
@@ -447,38 +447,34 @@
           <div class="flex gap-2">
             <label class="flex-1 text-center cursor-pointer">
               <input type="radio" name="expensePayFor" value="G" class="peer hidden">
-              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-amber-50 peer-checked:border-amber-500 peer-checked:text-amber-700 font-heading font-600 text-sm transition-all text-stone-500 box-border">👩 G</div>
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-amber-50 peer-checked:border-amber-500 peer-checked:text-amber-700 font-heading font-600 text-sm transition-all text-stone-500">👩 G</div>
             </label>
             <label class="flex-1 text-center cursor-pointer">
               <input type="radio" name="expensePayFor" value="H" class="peer hidden">
-              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-700 font-heading font-600 text-sm transition-all text-stone-500 box-border">🧑 H</div>
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-rose-50 peer-checked:border-rose-500 peer-checked:text-rose-700 font-heading font-600 text-sm transition-all text-stone-500">🧑 H</div>
             </label>
             <label class="flex-1 text-center cursor-pointer">
               <input type="radio" name="expensePayFor" value="All" class="peer hidden" checked>
-              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 font-heading font-600 text-sm transition-all text-stone-500 box-border">👨‍👩‍👧 所有人</div>
+              <div class="py-2 border-2 border-stone-200 rounded-lg peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 font-heading font-600 text-sm transition-all text-stone-500">👨‍👩‍👧 所有人</div>
             </label>
           </div>
          </div>
          
-         <!-- 🌟 核心修復：改用 Grid 系統完美對齊 Date, Item, Amount -->
-         <div class="grid grid-cols-3 gap-3">
-           <!-- 📅 日期 (Date) 佔滿 3 格 -->
-           <div class="col-span-3">
-            <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Date (日期)</label>
-            <input type="date" id="expense-date" class="w-full box-border px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm text-stone-600 focus:outline-none focus:ring-2 focus:ring-green-200 cursor-pointer block" required>
-           </div>
-           
-           <!-- 📝 項目 (Item) 佔 2 格 -->
-           <div class="col-span-2">
-            <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Item (項目)</label> 
-            <input type="text" id="expense-item" placeholder="e.g., Dinner" class="w-full box-border px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200 block" required>
-           </div>
-           
-           <!-- 💵 金額 (Amount) 佔 1 格 -->
-           <div class="col-span-1">
-            <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Amount</label> 
-            <input type="number" id="expense-amount" placeholder="$" class="w-full box-border px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm font-bold text-green-600 focus:outline-none focus:ring-2 focus:ring-green-200 block" required>
-           </div>
+         <!-- 📅 日期 (Date) -->
+         <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Date (日期)</label>
+          <input type="date" id="expense-date" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm text-stone-600 focus:outline-none focus:ring-2 focus:ring-green-200 cursor-pointer" required>
+         </div>
+
+         <div class="flex gap-3">
+          <div class="flex-1">
+           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Item (項目)</label> 
+           <input type="text" id="expense-item" placeholder="e.g., Dinner" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200" required>
+          </div>
+          <div class="w-1/3">
+           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Amount</label> 
+           <input type="number" id="expense-amount" placeholder="$" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm font-bold text-green-600 focus:outline-none focus:ring-2 focus:ring-green-200" required>
+          </div>
          </div>
 
          <!-- 付款方式 Radio Chips -->
