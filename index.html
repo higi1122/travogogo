@@ -268,6 +268,16 @@
           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Map Address (地圖搜尋用)</label> 
           <input type="text" id="activity-address" placeholder="預設與行程名稱相同" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
          </div>
+         
+         <!-- 🌟 新增：Address 2 (次要地址) -->
+         <div>
+          <label class="block font-heading font-600 text-stone-700 mb-2 text-sm flex items-center gap-2">
+            <i data-lucide="home" style="width: 14px; height: 14px;" class="text-blue-500"></i>
+            Address 2 (住宿/次要地址 - 選填)
+          </label> 
+          <input type="text" id="activity-address-2" placeholder="e.g., 住宿地址 / 備用地址" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
+         </div>
+
          <div>
           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Description</label>          <textarea id="activity-description" placeholder="What will you do here?" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm resize-none h-20 focus:outline-none focus:ring-2 focus:ring-green-200"></textarea>
          </div>
@@ -308,7 +318,7 @@
         </div>
        </div>
       </div>
-      </div>
+
      
      <div id="notes-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
       <h3 class="font-heading font-700 text-2xl text-stone-800 mb-6 flex items-center gap-2">
@@ -506,9 +516,9 @@
           <div id="card-selector-container" class="mt-3 hidden">
             <select id="specific-card" class="w-full px-4 py-2 bg-stone-50 border border-blue-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 outline-none">
               <option value="" disabled selected>👉 Select a credit card...</option>
-              <option value="Chill">BOC Chill</option>
-              <option value="MM">Hang Seng MM</option>
-              <option value="Others">Others</option>
+              <option value="BOC Chill">BOC Chill</option>
+              <option value="Hang Seng MM">Hang Seng MM</option>
+              <option value="Hang Seng MM">Others</option>
             </select>
           </div>
 
@@ -954,19 +964,44 @@ itineraries.forEach((day, dayIndex) => {
           actDiv.className = 'relative mb-3 group cursor-grab active:cursor-grabbing'; // 🌟 縮短 mb-6 為 mb-3
           
 // 🗺️ 支援新嘅 Address 欄位，如果無就用 Location。順便換咗保證唔會壞嘅原生 Google Maps 網址。
-          const targetAddress = activity.address ? activity.address : activity.location;
-          const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetAddress || '')}`;
-          const mapButtonHTML = activity.showMap !== false 
-            // 🌟 將文字換成 targetAddress，並加入 truncate 防止長地址撐爆排版
-            ? `<a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 ${themeBgLight} ${themeText} rounded-lg text-xs font-heading font-500 ${themeHoverBg} transition max-w-[200px] sm:max-w-[300px]" title="${escapeHTML(targetAddress)}">
-                 <span class="shrink-0">📍</span> 
-                 <span class="truncate">${escapeHTML(targetAddress || '打開地圖')}</span>
-               </a>`
-            : `<div></div>`;
+ // 🌟 1. 處理主要地址 (保留你原本嘅 theme 設計風格)
+         const targetAddress = activity.address ? activity.address : activity.location;
+         const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetAddress || '')}`;
+         let mainMapButton = '';
          
-          actDiv.innerHTML = `
+         if (activity.showMap !== false && (targetAddress && targetAddress.trim() !== '')) {
+           mainMapButton = `
+             <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 ${themeBgLight} ${themeText} rounded-lg text-xs font-heading font-500 ${themeHoverBg} transition max-w-[180px] sm:max-w-[250px]" title="${escapeHTML(targetAddress)}">
+               <span class="shrink-0">📍</span> 
+               <span class="truncate">${escapeHTML(targetAddress || '打開地圖')}</span>
+             </a>
+           `;
+         }
+
+         // 🌟 2. 處理次要地址 Address 2 (淺藍色屋仔設計)
+         let homeMapButton = '';
+         if (activity.address2 && activity.address2.trim() !== '') {
+           const mapUrl2 = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.address2.trim())}`;
+           homeMapButton = `
+             <a href="${mapUrl2}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-heading font-500 hover:bg-blue-100 transition max-w-[140px] sm:max-w-[200px]" title="${escapeHTML(activity.address2)}">
+               <i data-lucide="home" style="width: 12px; height: 12px;" class="shrink-0"></i>
+               <span class="truncate min-w-0">${escapeHTML(activity.address2)}</span>
+             </a>
+           `;
+         }
+
+         // 將兩個按鈕放埋一齊
+         const mapButtonsGroup = `
+           <div class="flex flex-wrap items-center gap-2">
+             ${mainMapButton}
+             ${homeMapButton}
+           </div>
+         `;
+         
+         actDiv.innerHTML = `
             <div class="timeline-dot ${themeDotBg} ${themeDotShadow}"></div>
-            <div class="bg-white rounded-xl px-4 py-3 shadow-sm border border-stone-100 ${themeBorderHover} transition w-full"> <div class="flex justify-between items-start">
+            <div class="bg-white rounded-xl px-4 py-3 shadow-sm border border-stone-100 ${themeBorderHover} transition w-full"> 
+              <div class="flex justify-between items-start">
                 <div>
                   <p class="text-xs font-heading text-stone-400 uppercase tracking-wide mb-1">${escapeHTML(activity.time || 'TBD')}</p>
                   <h4 class="font-heading font-600 text-stone-800">${escapeHTML(activity.location || 'Location')}</h4>
@@ -981,7 +1016,10 @@ itineraries.forEach((day, dayIndex) => {
                 </div>
               </div>
               <p class="font-body text-stone-500 text-sm mt-1">${escapeHTML(activity.description || '')}</p>
-              <div class="flex items-center justify-between mt-1.5"> ${mapButtonHTML}
+              
+              <!-- 🌟 取代原本位置，放入雙按鈕群組 -->
+              <div class="flex items-center justify-start mt-2.5"> 
+                ${mapButtonsGroup}
               </div>
             </div>
           `;
@@ -1270,6 +1308,10 @@ if (result.isOk) {
         timeInput.value = act.time || '';
         locationInput.value = act.location || '';
         addressInput.value = act.address || ''; // 🌟 新增
+        // 🌟 補回讀取 Address 2 嘅邏輯
+        if (document.getElementById('activity-address-2')) {
+          document.getElementById('activity-address-2').value = act.address2 || ''; 
+        }
         descInput.value = act.description || '';
         if(mapToggle) mapToggle.checked = act.showMap !== false;
       } else {
@@ -1300,7 +1342,7 @@ if (result.isOk) {
       }
     });
 
-    // Save Activity logic with validation
+ // Save Activity logic with validation
     document.getElementById('save-activity-btn').addEventListener('click', async () => {
       const trip = allTrips.find(t => t.__backendId === currentTripId);
       if (!trip || currentActivityDayIndex === null) return;
@@ -1309,12 +1351,15 @@ if (result.isOk) {
       const locationInput = document.getElementById('activity-location');
       const location = locationInput.value.trim();
       
-const mapToggle = document.getElementById('activity-show-map');
+      const mapToggle = document.getElementById('activity-show-map');
       const showMap = mapToggle ? mapToggle.checked : true;
 
       const addressInput = document.getElementById('activity-address').value.trim();
       // 🌟 核心邏輯升級：如果剔咗顯示地圖，而又無打地址，先用 Location 頂上；否則直接留空！
       const address = showMap ? (addressInput || location) : addressInput;
+      
+      // 🌟 新增：讀取 UI 上的 Address 2
+      const address2 = document.getElementById('activity-address-2') ? document.getElementById('activity-address-2').value.trim() : '';
       
       const description = document.getElementById('activity-description').value.trim();
      
@@ -1327,7 +1372,8 @@ const mapToggle = document.getElementById('activity-show-map');
       const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
       if (!itineraries[currentActivityDayIndex]) return;
 
-      const newActivity = { time, location, address, description, showMap }; // 🌟 新增 address 入去
+      // 🌟 將 address2 加入到儲存物件中
+      const newActivity = { time, location, address, address2, description, showMap }; 
      
       if (currentActivityEditIndex !== null) {
         itineraries[currentActivityDayIndex].activities[currentActivityEditIndex] = newActivity;
@@ -1343,13 +1389,22 @@ const mapToggle = document.getElementById('activity-show-map');
         ...trip,
         itineraries: newItinerariesStr
       });
-
-if (result.isOk) {
+      
+      if (result.isOk) {
+        // UI 反饋與清理工作
         document.getElementById('activity-modal').classList.add('hidden');
+        // 🌟 修正：函數名應該係 renderItineraries，並傳入 itineraries 陣列
         renderItineraries(itineraries);
         showToast(currentActivityEditIndex !== null ? 'Activity updated!' : 'Activity added!');
         currentActivityDayIndex = null;
         currentActivityEditIndex = null;
+        
+        // 🌟 清空新加嘅 input
+        if (document.getElementById('activity-address-2')) {
+          document.getElementById('activity-address-2').value = '';
+        }
+      } else {
+        showToast('Failed to save activity.', 'error');
       }
     });
 
