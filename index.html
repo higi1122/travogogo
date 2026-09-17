@@ -125,7 +125,8 @@
   </style>
  </head>
  
- <body class="h-full overflow-auto bg-stone-50">
+ <!-- 🌟 overflow-hidden 與 overscroll-none 完美模擬原生 APP，杜絕背景亂郁 -->
+ <body class="h-full overflow-hidden bg-stone-50 overscroll-none">
      
   <div id="login-overlay" class="fixed inset-0 bg-stone-50 z-[100] flex items-center justify-center">
     <div class="bg-white p-8 rounded-2xl shadow-sm border border-stone-100 max-w-sm w-full mx-4 text-center">
@@ -164,7 +165,8 @@
     </div>
 </div>
    
-<div id="main-content" class="flex-1 overflow-auto">
+<!-- 🌟 加咗 pb-24，確保碌到最底時，內容唔會被 fixed nav bar 遮住 -->
+   <div id="main-content" class="flex-1 overflow-auto pb-24">
        
     <div id="home-view" class="hidden p-6 max-w-5xl mx-auto">
       <h2 class="font-heading font-700 text-3xl text-stone-800 mb-8">My Trips</h2>
@@ -546,7 +548,8 @@
    </div>
    
 <!-- 🌟 升級版 Bottom Nav：平均分佈、防爆字、預留手機底部安全區 -->
-    <nav id="bottom-nav" class="bg-white border-t border-stone-200 px-3 py-3 flex justify-between items-center gap-1 w-full hidden z-40 relative">
+    <!-- 🌟 原生級固定 Bottom Nav (pb-8 預留咗畀 iPhone 底部橫線) -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 w-full bg-white border-t border-stone-200 px-3 pt-3 pb-3 sm:pb-4 flex justify-between items-center gap-1 hidden z-50">
        <!-- flex-1: 平均分配空間 / px-1: 減少左右內距 / truncate: 文字太長自動變... -->
        <button id="tab-itinerary" class="nav-tab active flex-1 px-1 py-2 rounded-lg font-heading text-[11px] sm:text-xs font-600 text-center text-green-600 bg-green-50 truncate">Itinerary</button> 
        <button id="tab-notes" class="nav-tab flex-1 px-1 py-2 rounded-lg font-heading text-[11px] sm:text-xs font-600 text-center text-stone-600 hover:bg-stone-100 truncate">Notes</button> 
