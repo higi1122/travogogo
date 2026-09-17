@@ -466,7 +466,7 @@
           <input type="date" id="expense-date" class="w-full flex-1 min-w-0 max-w-full appearance-none block px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm text-stone-600 focus:outline-none focus:ring-2 focus:ring-green-200 cursor-pointer m-0 box-border" required>
          </div>
 
-         <div class="flex gap-3">
+<div class="flex gap-3">
           <div class="flex-1">
            <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Item (項目)</label> 
            <input type="text" id="expense-item" placeholder="e.g., Dinner" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200" required>
@@ -477,7 +477,14 @@
           </div>
          </div>
 
-         <!-- 付款方式 Radio Chips -->
+         <!-- 📝 備註 (Remark) -->
+         <div>
+           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Remark (備註 - 選填)</label>
+           <!-- UX 細節：用 text 而唔係 textarea，保持緊湊 -->
+           <input type="text" id="expense-remark" placeholder="e.g., 幫同事代購 / 匯率 0.23" class="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
+         </div>
+
+         <!-- 💳 付款方式 (Payment Method) -->
          <div>
           <label class="block font-heading font-600 text-stone-700 mb-2 text-sm">Payment Method</label>
           <div class="flex gap-2">
@@ -2082,8 +2089,11 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
         detail = document.getElementById('specific-other-method').value.trim();
       }
 
-      // 🌟 將 payFor 加入新紀錄
-      const newExpense = { date, item, amount, payer, payFor, method, detail };
+      // 攞埋備註 (Remark)
+      const remark = document.getElementById('expense-remark').value.trim();
+
+      // 🌟 將 payFor 同 remark 加入新紀錄
+      const newExpense = { date, item, amount, payer, payFor, method, detail, remark };
       let expenses = trip.expenses ? JSON.parse(trip.expenses) : [];
       
       // 🌟 判斷係新增定編輯
@@ -2204,7 +2214,15 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
           // 🌟 收窄 padding (py-2.5 px-1)，改用 border-b 呈現緊湊嘅清單風格
           div.className = 'flex items-center justify-between py-2.5 px-1 hover:bg-stone-50 border-b border-stone-100 last:border-0 transition group';
           
-          // 🌟 頭像、字體、按鈕尺寸全面微縮，移除多餘嘅日期顯示
+          // 🌟 處理備註顯示邏輯 (如果有備註，先會顯示)
+          let remarkHtml = '';
+          if (exp.remark) {
+            remarkHtml = `<div class="text-[11px] font-body text-stone-500 mt-0.5 truncate flex items-center gap-1">
+                            <i data-lucide="message-square" style="width: 10px; height: 10px;"></i>
+                            ${escapeHTML(exp.remark)}
+                          </div>`;
+          }
+
           div.innerHTML = `
             <div class="flex items-center gap-3 overflow-hidden">
               <div class="shrink-0 w-8 h-8 rounded-full ${payerColor} flex items-center justify-center font-heading text-sm shadow-sm" title="Paid by: ${exp.payer}">
@@ -2217,6 +2235,7 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
                   <span class="shrink-0 w-1 h-1 rounded-full bg-stone-300"></span>
                   <span class="font-600 text-blue-500 shrink-0">${escapeHTML(payForDisplay)}</span>
                 </div>
+                ${remarkHtml} <!-- 🌟 插入備註 UI -->
               </div>
             </div>
             <div class="flex flex-col items-end gap-1 shrink-0 pl-2 relative z-10">
@@ -2274,6 +2293,7 @@ document.getElementById('home-btn').addEventListener('click', showHomeView);
       document.getElementById('expense-date').value = exp.date || '';
       document.getElementById('expense-item').value = exp.item || '';
       document.getElementById('expense-amount').value = exp.amount || '';
+      document.getElementById('expense-remark').value = exp.remark || ''; // 🌟 載入舊備註
 
       // 選擇付款人
       document.querySelectorAll('input[name="expensePayer"]').forEach(r => {
