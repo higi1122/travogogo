@@ -592,6 +592,7 @@
 
 const dataHandler = {
       onDataChanged(data) {
+        // allTrips 現在只包含清單 (輕量物件)
         allTrips = data || [];
         updateTripSelector();
         updateSettingsTripSelector(); 
@@ -601,12 +602,11 @@ const dataHandler = {
           return;
         }
 
-        // 🌟 升級版預設開啟邏輯：讀取設定 (預設開啟首頁)
         const defaultPref = localStorage.getItem('travel_default_trip') || 'home';
         
-        // 如果用家喺行程入面 Refresh，盡量留返喺嗰個行程
-        if (currentTripId && allTrips.find(t => t.__backendId === currentTripId)) {
-          displayTrip(currentTripId);
+        // UX 改善：如果係 Refresh 清單，保持當前畫面，唔好強行跳走
+        if (currentTripId && document.getElementById('home-view').classList.contains('hidden')) {
+           // 已經喺 Trip 裡面，唔做嘢
         } else if (defaultPref === 'home') {
           showHomeView();
         } else if (defaultPref === 'recent') {
@@ -615,7 +615,7 @@ const dataHandler = {
             const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
             return dateB - dateA; 
           });
-          displayTrip(sortedTrips[0].__backendId);
+          if(sortedTrips.length > 0) displayTrip(sortedTrips[0].__backendId);
         } else if (allTrips.find(t => t.__backendId === defaultPref)) {
           displayTrip(defaultPref);
         } else {
@@ -623,6 +623,30 @@ const dataHandler = {
         }
       }
     };
+
+    // 🌟 全局 Loading UI (轉圈圈) 控制函數
+    function toggleFullScreenLoading(show) {
+      let loader = document.getElementById('global-loader');
+      if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'global-loader';
+        loader.className = 'fixed inset-0 bg-stone-50/80 backdrop-blur-sm z-[200] flex flex-col items-center justify-center transition-opacity duration-300';
+        loader.innerHTML = `
+          <i data-lucide="loader-2" style="width: 40px; height: 40px;" class="text-green-500 animate-spin mb-4"></i>
+          <p class="font-heading font-600 text-stone-600 tracking-wider">Loading Trip Details...</p>
+        `;
+        document.body.appendChild(loader);
+        lucide.createIcons();
+      }
+      
+      if (show) {
+        loader.classList.remove('hidden', 'opacity-0');
+        loader.classList.add('opacity-100');
+      } else {
+        loader.classList.add('opacity-0');
+        setTimeout(() => loader.classList.add('hidden'), 300); // 等 fade out 動畫完
+      }
+    }
 
     // 🌟 顯示首頁視圖
     function showHomeView() {
@@ -674,53 +698,65 @@ const dataHandler = {
     }
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyVFriu7BI1HD2c3ZkOooO2DRSCiDU8E7y3GlWqHTTFFnS7evvogSx-wwSO5SsrtDdozA/exec";
 
-  // --- 🛡️ 全新升級：帶鎖匙 (Token) + 離線暫存 (Cache-first) 嘅 SDK ---
+  // --- 🛡️ 旗艦版 SDK：支援按需載入 (Lazy Loading) + 離線緩存 ---
     const customDataSdk = {
+      // 🌟 初始化：只載入 Trip_Meta 輕量清單
       async init(handler) {
         try {
           const token = localStorage.getItem('travel_token');
           if (!token) return { isOk: false }; 
 
-          // 🌟 1. 秒速讀取本地暫存 (Cache)
-          const cachedDataStr = localStorage.getItem('travel_cached_data');
-          if (cachedDataStr) {
-            try {
-              handler.onDataChanged(JSON.parse(cachedDataStr));
-            } catch(e) {}
+          // 1. 讀取本地清單暫存
+          const cachedListStr = localStorage.getItem('travel_cached_list');
+          if (cachedListStr) {
+            try { handler.onDataChanged(JSON.parse(cachedListStr)); } catch(e) {}
           } else {
-            // 如果係第一次用，完全無暫存，先彈「正在同步...」
-            showToast('首次載入，正在同步 Google Sheet...', 'success');
+            showToast('正在載入旅程清單...', 'success');
           }
           
-          // 🌟 2. 背景靜悄悄去 Google Sheet 攞最新資料
-          const response = await fetch(`${GAS_API_URL}?token=${token}`);
+          // 2. 從後端獲取最新清單 (action=list)
+          const response = await fetch(`${GAS_API_URL}?token=${token}&action=list`);
           const data = await response.json();
           
-          if (data.error === "Unauthorized") {
-            return { isOk: false, isAuthError: true }; 
-          }
+          if (data.error === "Unauthorized") return { isOk: false, isAuthError: true }; 
 
-          // 🌟 3. 將最新資料 Save 落暫存，然後再次更新畫面
-          localStorage.setItem('travel_cached_data', JSON.stringify(data));
+          // 3. 儲存清單並更新畫面
+          localStorage.setItem('travel_cached_list', JSON.stringify(data));
           handler.onDataChanged(data);
           
-          if (cachedDataStr) {
-            // 如果原本已經有舊資料睇緊，靜靜地彈句「已更新」就得
-            showToast('雲端同步完成，已取得最新資料！', 'success');
-          } else {
-            showToast('資料同步成功！', 'success');
-          }
+          if (cachedListStr) showToast('旅程清單已更新', 'success');
+          else showToast('載入成功！', 'success');
           
           return { isOk: true };
         } catch (error) {
-          console.error("讀取失敗:", error);
-          // 🌟 4. 如果斷網/Server死咗，但有暫存，都當佢成功，畀用家繼續睇舊資料！
-          if (localStorage.getItem('travel_cached_data')) {
-            showToast('目前離線，正在顯示本地暫存資料', 'error');
+          console.error("清單讀取失敗:", error);
+          if (localStorage.getItem('travel_cached_list')) {
+            showToast('目前離線，正在顯示本地暫存', 'error');
             return { isOk: true }; 
           }
-          showToast('無法連接 Google Sheet，請檢查網絡', 'error');
+          showToast('無法連接伺服器，請檢查網絡', 'error');
           return { isOk: false };
+        }
+      },
+
+      // 🌟 獲取單一旅程詳細資料 (action=detail)
+      async fetchDetail(tripId) {
+        try {
+          const token = localStorage.getItem('travel_token');
+          const response = await fetch(`${GAS_API_URL}?token=${token}&action=detail&trip_id=${encodeURIComponent(tripId)}`);
+          const data = await response.json();
+          
+          if (data.error) throw new Error(data.error);
+
+          // 成功取得詳細資料後，存入專屬緩存庫
+          let cachedDetails = JSON.parse(localStorage.getItem('travel_cached_details') || '{}');
+          cachedDetails[tripId] = data;
+          localStorage.setItem('travel_cached_details', JSON.stringify(cachedDetails));
+          
+          return data;
+        } catch (error) {
+          console.error(`獲取行程 ${tripId} 失敗:`, error);
+          throw error;
         }
       },
       
@@ -818,46 +854,88 @@ const dataHandler = {
       return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
     }
 
-    function displayTrip(tripId) {
-      const trip = allTrips.find(t => t.__backendId === tripId);
-      if (!trip) return;
-
- currentTripId = tripId;
-      document.getElementById('home-view').classList.add('hidden'); // 🌟 隱藏首頁
+    async function displayTrip(tripId) {
+      // 1. 基本畫面切換與準備
+      currentTripId = tripId;
+      document.getElementById('home-view').classList.add('hidden');
       document.getElementById('trip-creation-view').classList.add('hidden');
-      document.getElementById('trip-detail-view').classList.remove('hidden');
       document.getElementById('empty-state').classList.add('hidden');
-      document.getElementById('bottom-nav').classList.remove('hidden'); // 🌟 顯示底部導航列
-     
-     // Update hero (escaped for safety)
-      document.getElementById('trip-hero-title').textContent = trip.title;
+      document.getElementById('trip-detail-view').classList.remove('hidden');
+      document.getElementById('bottom-nav').classList.remove('hidden');
+      document.getElementById('trip-selector').value = tripId;
+      
+      // 隱藏所有分頁，預設顯示 Itinerary
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+      document.getElementById('itinerary-tab').classList.remove('hidden');
+      document.querySelectorAll('.nav-tab').forEach(nb => {
+        nb.classList.remove('active', 'bg-green-50', 'text-green-600');
+        nb.classList.add('text-stone-600', 'hover:bg-stone-100');
+      });
+      document.getElementById('tab-itinerary').classList.add('active', 'bg-green-50', 'text-green-600');
+      document.getElementById('tab-itinerary').classList.remove('text-stone-600', 'hover:bg-stone-100');
+
+      // 2. 先嘗試讀取本地緩存 (秒開體驗！)
+      let cachedDetails = JSON.parse(localStorage.getItem('travel_cached_details') || '{}');
+      let tripDetailData = cachedDetails[tripId];
+      
+      // 如果本地冇資料，即係第一次入呢個 Trip，需要彈全螢幕 Loading
+      const isFirstLoad = !tripDetailData;
+      if (isFirstLoad) toggleFullScreenLoading(true);
+      else renderTripUI(tripDetailData); // 有緩存就即刻畫畫面畀用家睇先
+
+      // 3. 背景非同步去 Google Sheet 攞最新資料
+      try {
+        const freshData = await window.dataSdk.fetchDetail(tripId);
+        
+        // 攞到最新資料後，覆蓋本地緩存，然後無縫重繪畫面 (靜靜雞更新)
+        tripDetailData = freshData;
+        
+        // 🌟 UX 小細節：如果本身清單 (allTrips) 入面呢個 trip 冇詳細資料，我哋塞返畀佢，
+        // 等你下面 Add Expense / Add Activity 可以喺 allTrips 度直接改
+        const listTripIndex = allTrips.findIndex(t => t.__backendId === tripId);
+        if (listTripIndex !== -1) {
+          allTrips[listTripIndex] = { ...allTrips[listTripIndex], ...freshData, isListOnly: false };
+        }
+
+        renderTripUI(tripDetailData);
+      } catch (error) {
+        if (isFirstLoad) {
+          // 如果第一次入，但斷網/報錯，就退返出大廳
+          showToast('無法載入行程詳細資料', 'error');
+          showHomeView();
+        } else {
+          // 如果已經睇緊舊資料，提示佢目前係離線模式
+          showToast('背景同步失敗，正在顯示離線資料', 'error');
+        }
+      } finally {
+        if (isFirstLoad) toggleFullScreenLoading(false);
+      }
+    }
+
+    // 專門負責將資料畫上畫面嘅附屬 Function
+    function renderTripUI(trip) {
+      if (!trip) return;
+      // Update Hero
+      document.getElementById('trip-hero-title').textContent = trip.title || '無標題行程';
       document.getElementById('trip-hero-dates').textContent = `${formatDate(trip.start_date)} – ${formatDate(trip.end_date)}`;
 
-      // Update selector
-      document.getElementById('trip-selector').value = tripId;
-
-      // Load itineraries
+      // Render Itineraries
       const itineraries = trip.itineraries ? JSON.parse(trip.itineraries) : [];
       renderItineraries(itineraries);
 
-      // 🌟 Load Notes (升級版：支援 Array 格式及兼容舊版字串)
+      // Render Notes
       let parsedNotes = [];
       try {
         parsedNotes = trip.notes ? JSON.parse(trip.notes) : [];
-        if (!Array.isArray(parsedNotes)) {
-          parsedNotes = trip.notes ? [{ content: trip.notes, timestamp: Date.now() }] : [];
-        }
-      } catch (e) {
-        // 兼容舊版純文字筆記
-        parsedNotes = trip.notes ? [{ content: trip.notes, timestamp: Date.now() }] : [];
-      }
+        if (!Array.isArray(parsedNotes)) parsedNotes = trip.notes ? [{ content: trip.notes, timestamp: Date.now() }] : [];
+      } catch (e) { parsedNotes = trip.notes ? [{ content: trip.notes, timestamp: Date.now() }] : []; }
       renderNotesList(parsedNotes);
 
-      // Load packing
+      // Render Packing
       const packingItems = trip.packing_items ? JSON.parse(trip.packing_items) : [];
       renderPackingList(packingItems);
 
-      // 🌟 Load expenses (記帳)
+      // Render Expenses
       const expenses = trip.expenses ? JSON.parse(trip.expenses) : [];
       renderExpenses(expenses);
     }
@@ -1568,7 +1646,8 @@ selector.innerHTML = '<option value="home">顯示首頁大廳 (Home)</option><op
       if (confirm('確定要登出並鎖上行程表嗎？')) {
         localStorage.removeItem('travel_token');
         localStorage.removeItem('travel_auth');
-        localStorage.removeItem('travel_cached_data'); // 🌟 保安升級：清空埋本地離線暫存
+        localStorage.removeItem('travel_cached_list'); // 🌟 清除清單緩存
+        localStorage.removeItem('travel_cached_details'); // 🌟 清除所有詳細行程緩存
         window.location.reload(); // 重新載入，立刻觸發密碼鎖
       }
     });
