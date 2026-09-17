@@ -318,7 +318,7 @@
         </div>
        </div>
       </div>
-
+      </div>
      
      <div id="notes-tab" class="tab-content hidden max-w-4xl mx-auto px-6 py-12">
       <h3 class="font-heading font-700 text-2xl text-stone-800 mb-6 flex items-center gap-2">
@@ -516,9 +516,9 @@
           <div id="card-selector-container" class="mt-3 hidden">
             <select id="specific-card" class="w-full px-4 py-2 bg-stone-50 border border-blue-200 rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 outline-none">
               <option value="" disabled selected>👉 Select a credit card...</option>
-              <option value="BOC Chill">BOC Chill</option>
-              <option value="Hang Seng MM">Hang Seng MM</option>
-              <option value="Hang Seng MM">Others</option>
+              <option value="Chill">BOC Chill</option>
+              <option value="MM">Hang Seng MM</option>
+              <option value="Others">Others</option>
             </select>
           </div>
 
@@ -963,17 +963,16 @@ itineraries.forEach((day, dayIndex) => {
           // 🌟 加入 cursor-grab 提示用家可以拖拉
           actDiv.className = 'relative mb-3 group cursor-grab active:cursor-grabbing'; // 🌟 縮短 mb-6 為 mb-3
           
-// 🗺️ 支援新嘅 Address 欄位，如果無就用 Location。順便換咗保證唔會壞嘅原生 Google Maps 網址。
- // 🌟 1. 處理主要地址 (保留你原本嘅 theme 設計風格)
+// 🌟 1. 處理主要地址 (保留你原本嘅 theme 設計風格)
          const targetAddress = activity.address ? activity.address : activity.location;
-         const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetAddress || '')}`;
          let mainMapButton = '';
          
          if (activity.showMap !== false && (targetAddress && targetAddress.trim() !== '')) {
+           const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetAddress || '')}`;
            mainMapButton = `
-             <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 ${themeBgLight} ${themeText} rounded-lg text-xs font-heading font-500 ${themeHoverBg} transition max-w-[180px] sm:max-w-[250px]" title="${escapeHTML(targetAddress)}">
+             <a href="${mapUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 ${themeBgLight} ${themeText} rounded-lg text-xs font-heading font-500 ${themeHoverBg} transition max-w-[140px] sm:max-w-[200px]" title="${escapeHTML(targetAddress)}">
                <span class="shrink-0">📍</span> 
-               <span class="truncate">${escapeHTML(targetAddress || '打開地圖')}</span>
+               <span class="truncate min-w-0">${escapeHTML(targetAddress || '打開地圖')}</span>
              </a>
            `;
          }
@@ -998,7 +997,7 @@ itineraries.forEach((day, dayIndex) => {
            </div>
          `;
          
-         actDiv.innerHTML = `
+          actDiv.innerHTML = `
             <div class="timeline-dot ${themeDotBg} ${themeDotShadow}"></div>
             <div class="bg-white rounded-xl px-4 py-3 shadow-sm border border-stone-100 ${themeBorderHover} transition w-full"> 
               <div class="flex justify-between items-start">
@@ -1293,7 +1292,8 @@ if (result.isOk) {
       const modalTitle = document.querySelector('#activity-modal h4');
       const timeInput = document.getElementById('activity-time');
       const locationInput = document.getElementById('activity-location');
-      const addressInput = document.getElementById('activity-address'); // 🌟 新增
+      const addressInput = document.getElementById('activity-address'); 
+      const address2Input = document.getElementById('activity-address-2'); // 🌟 宣告 Address 2 變數
       const descInput = document.getElementById('activity-description');
       const mapToggle = document.getElementById('activity-show-map');
       
@@ -1307,18 +1307,16 @@ if (result.isOk) {
         
         timeInput.value = act.time || '';
         locationInput.value = act.location || '';
-        addressInput.value = act.address || ''; // 🌟 新增
-        // 🌟 補回讀取 Address 2 嘅邏輯
-        if (document.getElementById('activity-address-2')) {
-          document.getElementById('activity-address-2').value = act.address2 || ''; 
-        }
+        addressInput.value = act.address || ''; 
+        if (address2Input) address2Input.value = act.address2 || ''; // 🌟 讀取舊資料
         descInput.value = act.description || '';
         if(mapToggle) mapToggle.checked = act.showMap !== false;
       } else {
         modalTitle.textContent = 'Add Activity';
         timeInput.value = '';
         locationInput.value = '';
-        addressInput.value = ''; // 🌟 新增
+        addressInput.value = ''; 
+        if (address2Input) address2Input.value = ''; // 🌟 清空欄位
         descInput.value = '';
         if(mapToggle) mapToggle.checked = true;
       }
@@ -1342,7 +1340,7 @@ if (result.isOk) {
       }
     });
 
- // Save Activity logic with validation
+    // Save Activity logic with validation
     document.getElementById('save-activity-btn').addEventListener('click', async () => {
       const trip = allTrips.find(t => t.__backendId === currentTripId);
       if (!trip || currentActivityDayIndex === null) return;
@@ -1351,7 +1349,7 @@ if (result.isOk) {
       const locationInput = document.getElementById('activity-location');
       const location = locationInput.value.trim();
       
-      const mapToggle = document.getElementById('activity-show-map');
+const mapToggle = document.getElementById('activity-show-map');
       const showMap = mapToggle ? mapToggle.checked : true;
 
       const addressInput = document.getElementById('activity-address').value.trim();
@@ -1360,7 +1358,7 @@ if (result.isOk) {
       
       // 🌟 新增：讀取 UI 上的 Address 2
       const address2 = document.getElementById('activity-address-2') ? document.getElementById('activity-address-2').value.trim() : '';
-      
+
       const description = document.getElementById('activity-description').value.trim();
      
       if (!location) {
@@ -1373,7 +1371,7 @@ if (result.isOk) {
       if (!itineraries[currentActivityDayIndex]) return;
 
       // 🌟 將 address2 加入到儲存物件中
-      const newActivity = { time, location, address, address2, description, showMap }; 
+      const newActivity = { time, location, address, address2, description, showMap };
      
       if (currentActivityEditIndex !== null) {
         itineraries[currentActivityDayIndex].activities[currentActivityEditIndex] = newActivity;
@@ -1389,22 +1387,13 @@ if (result.isOk) {
         ...trip,
         itineraries: newItinerariesStr
       });
-      
-      if (result.isOk) {
-        // UI 反饋與清理工作
+
+if (result.isOk) {
         document.getElementById('activity-modal').classList.add('hidden');
-        // 🌟 修正：函數名應該係 renderItineraries，並傳入 itineraries 陣列
         renderItineraries(itineraries);
         showToast(currentActivityEditIndex !== null ? 'Activity updated!' : 'Activity added!');
         currentActivityDayIndex = null;
         currentActivityEditIndex = null;
-        
-        // 🌟 清空新加嘅 input
-        if (document.getElementById('activity-address-2')) {
-          document.getElementById('activity-address-2').value = '';
-        }
-      } else {
-        showToast('Failed to save activity.', 'error');
       }
     });
 
